@@ -5,6 +5,7 @@ const Reaction = require("../models/Reaction");
 const Comment = require("../models/Comment");
 const Bookmark = require("../models/Bookmark");
 const Follow = require("../models/Follow");
+const Subscription = require("../models/Subscription");
 
 const json = (value) => JSON.stringify(value);
 
@@ -117,6 +118,7 @@ async function clearCollections() {
     Comment.deleteMany({}),
     Bookmark.deleteMany({}),
     Follow.deleteMany({}),
+    Subscription.deleteMany({}),
   ]);
 }
 

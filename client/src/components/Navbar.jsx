@@ -2,10 +2,12 @@ import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
+import { useSubscription } from "../context/SubscriptionContext.jsx";
 
 function Navbar() {
   const { user, logout } = useAuth();
   const { preference, resolvedTheme, setPreference } = useTheme();
+  const { isPro } = useSubscription();
   const [menuOpen, setMenuOpen] = useState(false);
   const profilePath = user?.username ? `/profile/${user.username}` : "/settings";
   const closeMenu = () => setMenuOpen(false);
@@ -21,6 +23,8 @@ function Navbar() {
         </button>
         <nav id="primary-navigation" className={`site-nav ${menuOpen ? "is-open" : ""}`} aria-label="Primary navigation">
           <NavLink to="/" onClick={closeMenu}>Explore</NavLink>
+          <NavLink to="/pricing" onClick={closeMenu}>{user && !isPro ? "Upgrade" : "Pricing"}</NavLink>
+          {user && isPro && <span className="pro-badge">PRO</span>}
           {user && <NavLink className="nav-create" to="/editor" onClick={closeMenu}>Write</NavLink>}
           {user && <NavLink to="/dashboard" onClick={closeMenu}>Dashboard</NavLink>}
           {user && <NavLink to={profilePath} onClick={closeMenu}>Profile</NavLink>}

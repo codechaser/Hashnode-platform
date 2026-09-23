@@ -10,6 +10,9 @@ const { app } = require("../server");
 const User = require("../models/User");
 const Bookmark = require("../models/Bookmark");
 const Follow = require("../models/Follow");
+const Subscription = require("../models/Subscription");
+const { isValidProSubscription } = require("../services/subscriptionService");
+const requirePro = require("../middleware/requirePro");
 const Post = require("../models/Post");
 const {
   request,
@@ -56,6 +59,58 @@ describe("health", () => {
     });
   });
 });
+
+describe("billing and PRO access", () => {
+  test("requires authentication and returns safe FREE details by default", async () => {
+    const unauthenticated = await request(baseUrl, "/api/billing/me");
+    const user = await createAuthenticatedUser(baseUrl, "Free Billing User");
+    const free = await request(baseUrl, "/api/billing/me", { token: user.token });
+
+    assert.equal(unauthenticated.status, 401);
+    assert.equal(free.status, 200);
+    assert.deepEqual(free.data, { plan: "free", status: "inactive", currentPeriodStart: null, currentPeriodEnd: null, cancelAtPeriodEnd: false });
+    assert.equal("provider" in free.data, false);
+    assert.equal("providerSubscriptionId" in free.data, false);
+  });
+
+  test("returns PRO details and treats inactive or expired subscriptions as non-PRO", async () => {
+    const user = await createAuthenticatedUser(baseUrl, "Pro Billing User");
+    await Subscription.create({ user: user.id, plan: "pro", status: "active", provider: "future-provider", providerSubscriptionId: "secret-id", currentPeriodStart: new Date(), currentPeriodEnd: new Date(Date.now() + 2592000000) });
+
+    const pro = await request(baseUrl, "/api/billing/me", { token: user.token });
+    assert.equal(pro.status, 200);
+    assert.equal(pro.data.plan, "pro");
+    assert.equal(pro.data.status, "active");
+    assert.equal("provider" in pro.data, false);
+    assert.equal("providerSubscriptionId" in pro.data, false);
+    assert.equal(isValidProSubscription(await Subscription.findOne({ user: user.id }).lean()), true);
+
+    await Subscription.updateOne({ user: user.id }, { status: "expired" });
+    assert.equal(isValidProSubscription(await Subscription.findOne({ user: user.id }).lean()), false);
+    await Subscription.updateOne({ user: user.id }, { status: "active", currentPeriodEnd: new Date(Date.now() - 1000) });
+    assert.equal(isValidProSubscription(await Subscription.findOne({ user: user.id }).lean()), false);
+  });
+
+  test("requirePro policy blocks free users and allows valid PRO users", async () => {
+    const freeUser = await createAuthenticatedUser(baseUrl, "Free Access User");
+    const proUser = await createAuthenticatedUser(baseUrl, "Pro Access User");
+    await Subscription.create({ user: proUser.id, plan: "pro", status: "active", currentPeriodEnd: new Date(Date.now() + 86400000) });
+
+    assert.equal(isValidProSubscription(await Subscription.findOne({ user: freeUser.id }).lean()), false);
+    assert.equal(isValidProSubscription(await Subscription.findOne({ user: proUser.id }).lean()), true);
+    assert.equal((await runRequirePro(freeUser.token)).status, 403);
+    assert.equal((await runRequirePro(proUser.token)).next, true);
+  });
+});
+
+function runRequirePro(token) {
+  return new Promise((resolve) => {
+    const result = {};
+    const req = { get: (header) => header === "Authorization" ? `Bearer ${token}` : undefined };
+    const res = { status: (status) => { result.status = status; return res; }, json: (body) => { result.body = body; resolve(result); } };
+    requirePro(req, res, () => { result.next = true; resolve(result); });
+  });
+}
 
 describe("authentication", () => {
   test("registers valid users and rejects invalid registration data", async () => {

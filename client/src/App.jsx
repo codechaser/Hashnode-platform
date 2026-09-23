@@ -12,6 +12,8 @@ import ProfilePage from "./pages/profile/ProfilePage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import BookmarksPage from "./pages/BookmarksPage.jsx";
+import PricingPage from "./pages/PricingPage.jsx";
+import { SubscriptionProvider } from "./context/SubscriptionContext.jsx";
 
 function AppShell() {
   useAuth();
@@ -25,6 +27,7 @@ function AppShell() {
           <Route path="/post/:slug" element={<PostDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
           <Route path="/editor" element={<ProtectedRoute><EditorPage /></ProtectedRoute>} />
           <Route path="/editor/:id" element={<ProtectedRoute><EditorPage /></ProtectedRoute>} />
@@ -43,7 +46,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppShell />
+        <SubscriptionProvider><AppShell /></SubscriptionProvider>
       </AuthProvider>
     </BrowserRouter>
   );

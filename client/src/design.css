@@ -319,3 +319,15 @@ body, .app-shell { background: var(--paper); color: var(--ink); }
   .profile-actions { width: 100%; margin-left: 0; justify-items: start; }
   .profile-hero h1 { font-size: 2.3rem; }
 }
+
+.nav-auth-links .button-small {
+  color: #ffffff !important;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+.nav-auth-links .button-small:hover {
+  color: #ffffff !important;
+  background: var(--accent-dark) !important;
+  border-color: var(--accent-dark) !important;
+}

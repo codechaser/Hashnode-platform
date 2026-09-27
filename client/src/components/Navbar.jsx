@@ -17,7 +17,9 @@ function Navbar() {
   return (
     <header className="site-header">
       <div className="nav-inner">
-        <NavLink className="brand" to="/" onClick={closeMenu}>hashnode<span>/lab</span></NavLink>
+        <a className="brand" href="/" onClick={closeMenu} aria-label="Hashnode Lab">
+          hashnode<span>/lab</span>
+        </a>
         <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={() => setMenuOpen((open) => !open)}>
           <span className="sr-only">Toggle navigation</span><span /><span /><span />
         </button>

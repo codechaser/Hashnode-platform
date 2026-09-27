@@ -154,7 +154,7 @@ body {
 }
 
 .brand span {
-  color: var(--accent);
+  color: inherit;
 }
 
 .site-nav {

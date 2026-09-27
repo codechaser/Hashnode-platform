@@ -10,7 +10,7 @@ const subscriptionSchema = new mongoose.Schema(
       index: true,
     },
     plan: { type: String, enum: ["free", "pro"], default: "free", required: true },
-    status: { type: String, enum: ["inactive", "active", "past_due", "cancelled", "expired"], default: "inactive", required: true },
+    status: { type: String, enum: ["inactive", "created", "active", "past_due", "paused", "cancelled", "expired"], default: "inactive", required: true },
     provider: { type: String, default: "" },
     providerSubscriptionId: { type: String, default: "" },
     currentPeriodStart: { type: Date, default: null },

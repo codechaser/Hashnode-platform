@@ -32,6 +32,7 @@ app.use(cors({
     return callback(null, false);
   },
 }));
+app.use("/api/billing/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
 app.get("/api/health", (req, res) => {
   res.status(200).json({ status: "ok", service: "hashnode-api" });

@@ -1,6 +1,8 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useSubscription } from "../context/SubscriptionContext.jsx";
+import api from "../services/api.js";
 
 const features = [
   ["Read and save articles", true, true],
@@ -11,7 +13,43 @@ const features = [
 
 function PricingPage() {
   const { user } = useAuth();
-  const { subscription, isPro } = useSubscription();
+  const { subscription, isPro, isActivationPending, refreshSubscription } = useSubscription();
+  const navigate = useNavigate();
+  const [billingState, setBillingState] = useState({ status: "idle", message: "" });
+
+  async function startCheckout() {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    if (isActivationPending) return;
+
+    setBillingState({ status: "loading", message: "Preparing Razorpay's hosted subscription page..." });
+    try {
+      const { data } = await api.post("/api/billing/subscription-link");
+      const hostedUrl = new URL(data?.shortUrl);
+      const supportedPath = hostedUrl.pathname.startsWith("/i/") || hostedUrl.pathname.startsWith("/rzp/");
+      if (hostedUrl.protocol !== "https:" || hostedUrl.hostname !== "rzp.io" || !supportedPath) {
+        throw new Error("The billing API returned an invalid Razorpay subscription link.");
+      }
+
+      setBillingState({ status: "loading", message: "Opening hosted checkout. PRO activates after Razorpay confirms your subscription." });
+      window.location.assign(hostedUrl.toString());
+    } catch (error) {
+      setBillingState({ status: "error", message: error.response?.data?.message || error.message || "Unable to open Razorpay's hosted subscription page." });
+    }
+  }
+
+  async function cancelSubscription() {
+    setBillingState({ status: "loading", message: "Updating your subscription..." });
+    try {
+      await api.post("/api/billing/subscriptions/cancel", { cancelAtPeriodEnd: true });
+      await refreshSubscription();
+      setBillingState({ status: "success", message: "Your subscription will cancel at the end of the current period." });
+    } catch (error) {
+      setBillingState({ status: "error", message: error.response?.data?.message || "Unable to update subscription." });
+    }
+  }
 
   return (
     <div className="page-wrap pricing-page">
@@ -36,8 +74,11 @@ function PricingPage() {
           <p className="price"><strong>₹199</strong><span>/ month</span></p>
           <p className="annual-price">or ₹1,999 / year</p>
           <p className="pricing-copy">More room for your publishing practice, with tools that stay out of the way.</p>
-          <button className="button button-primary pricing-action" type="button" disabled>{isPro ? "Manage Subscription" : "Upgrade to PRO"}</button>
-          <small className="placeholder-note">Subscriptions will be available in a future release.</small>
+          <button className="button button-primary pricing-action" type="button" onClick={isPro ? cancelSubscription : isActivationPending ? undefined : startCheckout} disabled={billingState.status === "loading" || subscription.cancelAtPeriodEnd || isActivationPending}>
+            {billingState.status === "loading" ? "Please wait..." : isPro ? "Cancel at period end" : isActivationPending ? "Activating PRO..." : user ? "Upgrade to PRO" : "Log in to upgrade"}
+          </button>
+          {isActivationPending && <p className="billing-message loading" role="status">Payment received. Razorpay is finalizing your subscription; PRO access will activate once confirmation arrives.</p>}
+          {billingState.message && <p className={`billing-message ${billingState.status}`}>{billingState.message}</p>}
         </section>
       </div>
 
@@ -49,7 +90,7 @@ function PricingPage() {
         </div>
       </section>
 
-      {user && <p className="pricing-status">Your account is on <strong>{subscription.plan.toUpperCase()}</strong>. Billing actions are not enabled yet.</p>}
+      {user && <p className="pricing-status">Your account is on <strong>{subscription.plan.toUpperCase()}</strong>. {subscription.cancelAtPeriodEnd ? "Cancellation is scheduled at period end." : isPro ? "Your PRO subscription is active." : isActivationPending ? "Payment received; PRO activation is pending Razorpay confirmation." : "Upgrade when you are ready."}</p>}
     </div>
   );
 }

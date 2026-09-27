@@ -323,7 +323,9 @@ body, .app-shell { background: var(--paper); color: var(--ink); }
 .skeleton-card { background: linear-gradient(90deg, var(--surface) 20%, var(--line) 40%, var(--surface) 60%); background-size: 300% 100%; }
 
 @media (max-width: 760px) {
+  .site-header { position: relative; width: 100%; margin: 0; padding: 0 16px; }
   .nav-inner, .page-wrap, .site-footer { width: min(100% - 32px, 1180px); }
+  .nav-inner { width: 100%; margin: 0; gap: 12px; }
   .menu-toggle { display: block; }
   .site-nav { position: absolute; top: 76px; right: 16px; left: 16px; display: none; align-items: stretch; flex-direction: column; gap: 0; padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); box-shadow: var(--shadow); }
   .site-nav.is-open { display: flex; }

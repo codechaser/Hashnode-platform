@@ -2,6 +2,8 @@ const express = require("express");
 const authMiddleware = require("../middleware/authMiddleware");
 const {
   getPublicProfile,
+  getSuggestedWriters,
+  listPublicUsers,
   getCurrentUserProfile,
   updateCurrentUserProfile,
 } = require("../controllers/userController");
@@ -17,6 +19,8 @@ const {
 
 const router = express.Router();
 
+router.get("/", optionalAuthMiddleware, listPublicUsers);
+router.get("/discover", optionalAuthMiddleware, getSuggestedWriters);
 router.post("/me/featured", authMiddleware, require("../middleware/requirePro"), require("../controllers/creatorController").setFeaturedPost);
 router.get("/me", authMiddleware, getCurrentUserProfile);
 router.put("/me", authMiddleware, updateCurrentUserProfile);

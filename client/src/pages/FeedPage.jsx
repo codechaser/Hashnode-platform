@@ -8,6 +8,8 @@ function FeedPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [posts, setPosts] = useState([]);
   const [tags, setTags] = useState([]);
+  const [trendingTags, setTrendingTags] = useState([]);
+  const [suggestedWriters, setSuggestedWriters] = useState([]);
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -26,10 +28,14 @@ function FeedPage() {
     setError("");
 
     try {
-      const [feedResponse, tagResponse] = await Promise.all([
+      const [feedResult, tagResult, trendingResult, writersResult] = await Promise.allSettled([
         api.get("/api/posts/feed", { params: { search, tag: selectedTag, page: nextPage, limit: 10 } }),
         api.get("/api/tags"),
+        api.get("/api/tags/trending"),
+        api.get("/api/users/discover"),
       ]);
+      if (feedResult.status === "rejected") throw feedResult.reason;
+      const feedResponse = feedResult.value;
       const nextPosts = feedResponse?.data?.posts || [];
       setPosts((currentPosts) => {
         if (!append) return nextPosts;
@@ -38,7 +44,9 @@ function FeedPage() {
       });
       setPage(feedResponse?.data?.page || nextPage);
       setHasNextPage(Boolean(feedResponse?.data?.hasNextPage));
-      setTags(tagResponse?.data?.tags || []);
+      setTags(tagResult.status === "fulfilled" ? tagResult.value?.data?.tags || [] : []);
+      setTrendingTags(trendingResult.status === "fulfilled" ? trendingResult.value?.data?.tags || [] : []);
+      setSuggestedWriters(writersResult.status === "fulfilled" ? writersResult.value?.data?.writers || [] : []);
     } catch (err) {
       setError(err?.response?.data?.message || "Unable to load the community feed.");
     } finally {
@@ -78,7 +86,7 @@ function FeedPage() {
           <p className="eyebrow">THE DEVELOPER READING ROOM</p>
           <h1>Build in public.<br /><em>Learn in company.</em></h1>
           <p className="hero-description">Practical notes, sharp opinions, and hard-won lessons from people making things on the web.</p>
-          <Link className="button button-primary" to="/editor">Share an idea <span aria-hidden="true">-&gt;</span></Link>
+          <div className="hero-actions"><Link className="button button-primary" to="/editor">Share an idea <span aria-hidden="true">-&gt;</span></Link><Link className="button button-secondary" to="/writers">Find writers</Link></div>
         </div>
         <div className="hero-aside" aria-label="Community highlights">
           <span className="hero-aside-number">01</span>
@@ -87,6 +95,21 @@ function FeedPage() {
           <p className="hero-aside-note">Fresh perspectives from a growing developer community.</p>
         </div>
       </section>
+
+      {(trendingTags.length > 0 || suggestedWriters.length > 0) && <section className="discovery-grid" aria-label="Community discovery">
+        {trendingTags.length > 0 && <div className="discovery-panel">
+          <div className="discovery-heading"><div><p className="section-label">THE LAST 30 DAYS</p><h2>Trending topics</h2></div><span aria-hidden="true">↗</span></div>
+          <div className="discovery-tags">{trendingTags.map((tag) => <button type="button" key={tag.slug} onClick={() => selectTag(tag.name)}><span>#{tag.name}</span><small>{tag.postCount} {tag.postCount === 1 ? "article" : "articles"}</small></button>)}</div>
+        </div>}
+        {suggestedWriters.length > 0 && <div className="discovery-panel">
+          <div className="discovery-heading"><div><p className="section-label">ACTIVE IN THE LAST 90 DAYS</p><h2>Writers to follow</h2></div><span aria-hidden="true">✳</span></div>
+          <div className="discovery-writers">{suggestedWriters.map((writer) => <Link className="discovery-writer" to={`/profile/${writer.username}`} key={writer.id}>
+            {writer.avatarUrl ? <img src={writer.avatarUrl} alt="" /> : <span className="discovery-avatar" aria-hidden="true">{writer.name?.slice(0, 1)?.toUpperCase()}</span>}
+            <span className="discovery-writer-copy"><strong>{writer.name}</strong><small>@{writer.username} · {writer.articleCount} recent {writer.articleCount === 1 ? "article" : "articles"}</small>{writer.bio && <small className="discovery-bio">{writer.bio}</small>}</span>
+            <span className="discovery-follow" aria-hidden="true">View</span>
+          </Link>)}</div>
+        </div>}
+      </section>}
 
       <section className="feed-toolbar" aria-label="Explore articles">
         <div>

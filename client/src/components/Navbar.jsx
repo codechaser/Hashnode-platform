@@ -25,6 +25,7 @@ function Navbar() {
         </button>
         <nav id="primary-navigation" className={`site-nav ${menuOpen ? "is-open" : ""}`} aria-label="Primary navigation">
           <NavLink to="/" onClick={closeMenu}>Explore</NavLink>
+          <NavLink to="/writers" onClick={closeMenu}>Writers</NavLink>
           <NavLink to="/pricing" onClick={closeMenu}>{user && !isPro ? "Upgrade" : "Pricing"}</NavLink>
           {user && isPro && <span className="pro-badge">PRO</span>}
           {user && isActivationPending && <span className="activation-badge" role="status">Activating PRO…</span>}

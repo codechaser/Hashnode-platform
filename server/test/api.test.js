@@ -428,6 +428,29 @@ describe("tags and profiles", () => {
     assert.equal(current.data.user.username, "profile-owner");
     assert.equal(unknown.status, 404);
   });
+
+  test("discovers trending tags from recent published posts and suggests unfollowed active writers", async () => {
+    const viewer = await createAuthenticatedUser(baseUrl, "Discover Viewer");
+    const followed = await createAuthenticatedUser(baseUrl, "Discover Followed");
+    const writer = await createAuthenticatedUser(baseUrl, "Discover Writer");
+    await Follow.create({ follower: viewer.id, following: followed.id });
+
+    await createPost(baseUrl, viewer, { tags: ["React"] });
+    await createPost(baseUrl, followed, { tags: ["react"] });
+    await createPost(baseUrl, writer, { tags: ["React"] });
+    await createPost(baseUrl, writer, { tags: ["React"], status: "draft" });
+
+    const trending = await request(baseUrl, "/api/tags/trending");
+    const suggestions = await request(baseUrl, "/api/users/discover", { token: viewer.token });
+    const react = trending.data.tags.find((tag) => tag.slug === "react");
+
+    assert.equal(trending.status, 200);
+    assert.equal(react.postCount, 3);
+    assert.equal(suggestions.status, 200);
+    assert.deepEqual(suggestions.data.writers.map((item) => item.username), [writer.user.username]);
+    assert.equal(suggestions.data.writers[0].articleCount, 1);
+    assert.equal("email" in suggestions.data.writers[0], false);
+  });
 });
 
 describe("reactions", () => {
@@ -662,6 +685,31 @@ describe("bookmarks", () => {
 });
 
 describe("follows", () => {
+  test("lets members find one another safely and shows mutual follow state", async () => {
+    const viewer = await createAuthenticatedUser(baseUrl, "Directory Viewer");
+    const member = await createAuthenticatedUser(baseUrl, "Directory Member");
+    const followsViewer = await createAuthenticatedUser(baseUrl, "Directory Follower");
+    await Follow.create([
+      { follower: viewer.id, following: member.id },
+      { follower: followsViewer.id, following: viewer.id },
+    ]);
+
+    const search = await request(baseUrl, "/api/users?search=Directory%20Member", { token: viewer.token });
+    const allMembers = await request(baseUrl, "/api/users?search=Directory");
+    const memberResult = search.data.users[0];
+
+    assert.equal(search.status, 200);
+    assert.equal(search.data.total, 1);
+    assert.equal(memberResult.username, member.user.username);
+    assert.equal(memberResult.following, true);
+    assert.equal(memberResult.followers, 1);
+    assert.equal("email" in memberResult, false);
+    assert.equal("password" in memberResult, false);
+    assert.equal(allMembers.status, 200);
+    assert.equal(allMembers.data.total, 3);
+    assert.ok(allMembers.data.users.every((item) => item.following === false && item.followsYou === false));
+  });
+
   test("supports secure follow lifecycle and independent multi-user relationships", async () => {
     const userA = await createAuthenticatedUser(baseUrl, "Follow A");
     const userB = await createAuthenticatedUser(baseUrl, "Follow B");

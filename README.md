@@ -6,8 +6,8 @@ A Pure MERN blogging platform for publishing and discovering developer articles.
 
 - JWT and bcrypt authentication
 - Draft and published articles with ownership protection
-- Public feed, title search, tags, pagination, and Markdown code highlighting
-- Public profiles, reactions, comments, bookmarks, and follows
+- Public feed, title search, tags, pagination, trending topics from the last 30 days, and active writer suggestions from the last 90 days
+- Searchable public member directory, profiles, follower discovery, reactions, comments, bookmarks, and follows
 - Dashboard, editor, settings, and light/dark/system themes
 - PRO creator analytics, scheduled publishing, version history, HTTPS cover images, and featured articles
 
@@ -92,8 +92,8 @@ The production frontend output is `client/dist`. The backend production start co
 - `GET /api/health`
 - `/api/auth`: registration, login, and current-user session
 - `/api/posts`: owned post CRUD, public feed, articles, reactions, bookmarks, and comments
-- `/api/tags`: public tags and authenticated tag creation
-- `/api/users`: profiles, settings, bookmarks, and follow relationships
+- `/api/tags`: public tags, recent trending-tag counts, and authenticated tag creation
+- `/api/users`: searchable member directory, profiles, active writer discovery, settings, bookmarks, and follow relationships
 
 ## FREE and PRO
 

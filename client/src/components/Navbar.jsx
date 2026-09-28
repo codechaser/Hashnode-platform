@@ -92,17 +92,17 @@ function Navbar() {
           <span className="sr-only">Toggle navigation</span><span /><span /><span />
         </button>
         <nav id="primary-navigation" className={`site-nav ${menuOpen ? "is-open" : ""}`} aria-label="Primary navigation">
-          <NavLink to="/" onClick={closeMenu}>Explore</NavLink>
-          <NavLink to="/writers" onClick={closeMenu}>Writers</NavLink>
-          <NavLink to="/pricing" onClick={closeMenu}>{user && !isPro ? "Upgrade" : "Pricing"}</NavLink>
+          <NavLink className="nav-primary" to="/" onClick={closeMenu}>Explore</NavLink>
+          <NavLink className="nav-primary" to="/writers" onClick={closeMenu}>Writers</NavLink>
+          <NavLink className="nav-primary" to="/pricing" onClick={closeMenu}>{user && !isPro ? "Upgrade" : "Pricing"}</NavLink>
           {user && isPro && <span className="pro-badge">PRO</span>}
           {user && isActivationPending && <span className="activation-badge" role="status">Activating PRO…</span>}
-          {user && <NavLink className="nav-create" to="/editor" onClick={closeMenu}>Write</NavLink>}
-          {user && <NavLink to="/dashboard" onClick={closeMenu}>Dashboard</NavLink>}
-          {user && <NavLink className="nav-notifications" to="/notifications" onClick={closeMenu}>Notifications{unreadNotifications > 0 && <span className="notification-count" aria-label={`${unreadNotifications} unread`}>{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</NavLink>}
-          {user && <NavLink to={profilePath} onClick={closeMenu}>Profile</NavLink>}
-          {user && <NavLink to="/settings" onClick={closeMenu}>Settings</NavLink>}
-          {user && <NavLink to="/bookmarks" onClick={closeMenu}>Bookmarks</NavLink>}
+          {user && <NavLink className="nav-secondary nav-create" to="/editor" onClick={closeMenu}>Write</NavLink>}
+          {user && <NavLink className="nav-secondary" to="/dashboard" onClick={closeMenu}>Dashboard</NavLink>}
+          {user && <NavLink className="nav-secondary nav-notifications" to="/notifications" onClick={closeMenu}>Notifications{unreadNotifications > 0 && <span className="notification-count" aria-label={`${unreadNotifications} unread`}>{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</NavLink>}
+          {user && <NavLink className="nav-secondary" to={profilePath} onClick={closeMenu}>Profile</NavLink>}
+          {user && <NavLink className="nav-secondary" to="/settings" onClick={closeMenu}>Settings</NavLink>}
+          {user && <NavLink className="nav-secondary" to="/bookmarks" onClick={closeMenu}>Bookmarks</NavLink>}
           <button ref={moreTriggerRef} className={`nav-more ${moreOpen ? "active" : ""}`} type="button" aria-haspopup="dialog" aria-expanded={moreOpen} aria-controls="more-panel" onClick={openMore}>More <span aria-hidden="true">•••</span></button>
           <button
             className="theme-toggle"
@@ -146,6 +146,11 @@ function Navbar() {
             <Link to="/writers" onClick={closeMore}>Find writers</Link>
             <Link to="/" onClick={closeMore}>Explore feed</Link>
             <Link to="/pricing" onClick={closeMore}>{isPro ? "PRO plan" : "Explore PRO"}</Link>
+            {user && <Link to="/editor" onClick={closeMore}>Write an article</Link>}
+            {user && <Link to="/dashboard" onClick={closeMore}>Creator dashboard</Link>}
+            {user && <Link to={profilePath} onClick={closeMore}>Profile</Link>}
+            {user && <Link to="/settings" onClick={closeMore}>Settings</Link>}
+            {user && <Link to="/bookmarks" onClick={closeMore}>Saved reads</Link>}
             {user && <Link to="/notifications" onClick={closeMore}>Notifications{unreadNotifications > 0 && <span className="more-unread"> ({unreadNotifications > 99 ? "99+" : unreadNotifications} new)</span>}</Link>}
           </section>
           <footer className="more-panel-footer">

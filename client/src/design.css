@@ -525,6 +525,33 @@ body, .app-shell { background: var(--paper); color: var(--ink); }
   border-color: var(--accent-dark) !important;
 }
 
+@media (min-width: 900px) {
+  .nav-inner { min-width: 0; gap: 16px; }
+  .menu-toggle { display: none; }
+  .site-nav {
+    position: static;
+    display: flex;
+    width: auto;
+    max-height: none;
+    align-items: center;
+    flex: 1 1 auto;
+    flex-direction: row;
+    gap: clamp(10px, 1.4vw, 18px);
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .site-nav .nav-secondary { display: none; }
+  .site-nav a.nav-primary { padding: 0; white-space: nowrap; }
+  .site-nav .nav-more { width: auto; padding: 0; white-space: nowrap; }
+  .site-nav .theme-toggle { flex: 0 0 auto; margin: 0; white-space: nowrap; }
+  .site-nav .nav-logout { padding: 0; white-space: nowrap; }
+  .site-nav .nav-auth-links { align-items: center; flex: 0 0 auto; flex-direction: row; gap: 10px; }
+  .site-nav .nav-auth-links a { padding: 0; white-space: nowrap; }
+}
+
 @media (max-width: 500px) {
   .writers-grid { grid-template-columns: 1fr; }
 }

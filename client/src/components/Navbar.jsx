@@ -95,12 +95,13 @@ function Navbar() {
           <NavLink className="nav-primary" to="/" onClick={closeMenu}>Explore</NavLink>
           <NavLink className="nav-primary" to="/writers" onClick={closeMenu}>Writers</NavLink>
           <NavLink className="nav-primary" to="/pricing" onClick={closeMenu}>{user && !isPro ? "Upgrade" : "Pricing"}</NavLink>
+          <NavLink className="nav-primary" to="/search" onClick={closeMenu}>Search</NavLink>
           {user && isPro && <span className="pro-badge">PRO</span>}
           {user && isActivationPending && <span className="activation-badge" role="status">Activating PRO…</span>}
-          {user && <NavLink className="nav-secondary nav-create" to="/editor" onClick={closeMenu}>Write</NavLink>}
+          {user && <NavLink className="nav-visible" to="/editor" onClick={closeMenu}>Write</NavLink>}
           {user && <NavLink className="nav-secondary" to="/dashboard" onClick={closeMenu}>Dashboard</NavLink>}
-          {user && <NavLink className="nav-secondary nav-notifications" to="/notifications" onClick={closeMenu}>Notifications{unreadNotifications > 0 && <span className="notification-count" aria-label={`${unreadNotifications} unread`}>{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</NavLink>}
-          {user && <NavLink className="nav-secondary" to={profilePath} onClick={closeMenu}>Profile</NavLink>}
+          {user && <NavLink className="nav-visible nav-notifications" to="/notifications" onClick={closeMenu}>Notifications{unreadNotifications > 0 && <span className="notification-count" aria-label={`${unreadNotifications} unread`}>{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</NavLink>}
+          {user && <NavLink className="nav-avatar" to={profilePath} onClick={closeMenu} aria-label={`Your profile, ${user.name || user.username}`} title="Your profile">{user.avatarUrl ? <img src={user.avatarUrl} alt="" /> : <span>{(user.name || user.username || "U").charAt(0).toUpperCase()}</span>}</NavLink>}
           {user && <NavLink className="nav-secondary" to="/settings" onClick={closeMenu}>Settings</NavLink>}
           {user && <NavLink className="nav-secondary" to="/bookmarks" onClick={closeMenu}>Bookmarks</NavLink>}
           <button ref={moreTriggerRef} className={`nav-more ${moreOpen ? "active" : ""}`} type="button" aria-haspopup="dialog" aria-expanded={moreOpen} aria-controls="more-panel" onClick={openMore}>More <span aria-hidden="true">•••</span></button>
@@ -125,6 +126,7 @@ function Navbar() {
             <div><p className="eyebrow">HASHNODE/LAB</p><h2 id="more-title">More</h2></div>
             <button ref={moreCloseRef} className="more-close" type="button" aria-label="Close More menu" onClick={closeMore}>×</button>
           </header>
+          {user && isActivationPending && <p className="more-activation-status" role="status">Activating PRO… Razorpay confirmation is still pending.</p>}
 
           <section className="more-group more-products" aria-labelledby="more-products-title">
             <h3 id="more-products-title" className="sr-only">Developer tools</h3>
@@ -144,6 +146,7 @@ function Navbar() {
             <a href="https://hashnode.com/sitemap.xml" target="_blank" rel="noreferrer">Sitemap</a>
             <a href="https://hashnode.com/code-of-conduct" target="_blank" rel="noreferrer">Code of Conduct</a>
             <Link to="/writers" onClick={closeMore}>Find writers</Link>
+            <Link to="/search" onClick={closeMore}>Search articles and writers</Link>
             <Link to="/" onClick={closeMore}>Explore feed</Link>
             <Link to="/pricing" onClick={closeMore}>{isPro ? "PRO plan" : "Explore PRO"}</Link>
             {user && <Link to="/editor" onClick={closeMore}>Write an article</Link>}

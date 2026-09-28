@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Post = require("../models/Post");
 const Reaction = require("../models/Reaction");
+const Comment = require("../models/Comment");
 const Revision = require("../models/Revision");
 const Follow = require("../models/Follow");
 const { hasValidProSubscription } = require("../services/subscriptionService");
@@ -56,22 +57,31 @@ const parsePagination = (query) => {
   };
 };
 
-const publicPostFields = "title slug content excerpt author tags status coverImage createdAt updatedAt";
+const publicPostFields = "title slug content excerpt author tags status coverImage viewCount createdAt updatedAt";
 
-const withReactionCounts = async (posts) => {
+const withPublicEngagementCounts = async (posts) => {
   if (!posts.length) {
     return [];
   }
 
-  const counts = await Reaction.aggregate([
-    { $match: { post: { $in: posts.map((post) => post._id) } } },
-    { $group: { _id: "$post", count: { $sum: 1 } } },
+  const postIds = posts.map((post) => post._id);
+  const [reactions, comments] = await Promise.all([
+    Reaction.aggregate([
+      { $match: { post: { $in: postIds } } },
+      { $group: { _id: "$post", count: { $sum: 1 } } },
+    ]),
+    Comment.aggregate([
+      { $match: { post: { $in: postIds } } },
+      { $group: { _id: "$post", count: { $sum: 1 } } },
+    ]),
   ]);
-  const countMap = new Map(counts.map((item) => [item._id.toString(), item.count]));
+  const reactionMap = new Map(reactions.map((item) => [item._id.toString(), item.count]));
+  const commentMap = new Map(comments.map((item) => [item._id.toString(), item.count]));
 
   return posts.map((post) => ({
     ...post.toObject(),
-    reactionCount: countMap.get(post._id.toString()) || 0,
+    reactionCount: reactionMap.get(post._id.toString()) || 0,
+    commentCount: commentMap.get(post._id.toString()) || 0,
   }));
 };
 
@@ -94,14 +104,15 @@ const getPublicFeed = async (req, res) => {
 
     const total = await Post.countDocuments(query);
     const totalPages = Math.ceil(total / limit);
+    const sort = req.query.sort === "popular" ? { viewCount: -1, createdAt: -1, _id: -1 } : { createdAt: -1, _id: -1 };
     const posts = await Post.find(query)
       .select(publicPostFields)
       .populate("author", "name username avatarUrl")
-      .sort({ createdAt: -1, _id: -1 })
+      .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit);
 
-    const postsWithCounts = await withReactionCounts(posts);
+    const postsWithCounts = await withPublicEngagementCounts(posts);
     return res.status(200).json({ posts: postsWithCounts, page, limit, total, totalPages, hasNextPage: page < totalPages });
   } catch (error) {
     console.error(`Public feed error: ${error.message}`);
@@ -126,13 +137,14 @@ const getFollowingFeed = async (req, res) => {
 
     const total = await Post.countDocuments(query);
     const totalPages = Math.ceil(total / limit);
+    const sort = req.query.sort === "popular" ? { viewCount: -1, createdAt: -1, _id: -1 } : { createdAt: -1, _id: -1 };
     const posts = await Post.find(query)
       .select(publicPostFields)
       .populate("author", "name username avatarUrl")
-      .sort({ createdAt: -1, _id: -1 })
+      .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit);
-    const postsWithCounts = await withReactionCounts(posts);
+    const postsWithCounts = await withPublicEngagementCounts(posts);
     return res.status(200).json({ posts: postsWithCounts, page, limit, total, totalPages, hasNextPage: page < totalPages });
   } catch (error) {
     console.error(`Following feed error: ${error.message}`);
@@ -160,8 +172,11 @@ const getPublicPostBySlug = async (req, res) => {
 
     await trackPostView(req, post);
 
-    const reactionCount = await Reaction.countDocuments({ post: post._id });
-    return res.status(200).json({ post: { ...post, reactionCount } });
+    const [reactionCount, commentCount] = await Promise.all([
+      Reaction.countDocuments({ post: post._id }),
+      Comment.countDocuments({ post: post._id }),
+    ]);
+    return res.status(200).json({ post: { ...post, reactionCount, commentCount } });
   } catch (error) {
     console.error(`Public post lookup error: ${error.message}`);
     return res.status(500).json({ message: "Unable to fetch public post" });

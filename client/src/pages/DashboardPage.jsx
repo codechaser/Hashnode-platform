@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../components/FeedbackStates.jsx";
 import api from "../services/api.js";
 import { useSubscription } from "../context/SubscriptionContext.jsx";
+import { formatScheduledAt } from "../utils/formatScheduledAt.js";
 
 const FILTERS = {
   all: "All",
@@ -62,6 +63,7 @@ function DashboardPage() {
 
     return posts.filter((post) => post.status === filter);
   }, [posts, filter]);
+  const maxDailyViews = Math.max(0, ...(analytics?.viewsByDay || []).map((day) => day.views));
 
   async function handleDelete(post) {
     if (!post?._id) {
@@ -95,7 +97,13 @@ function DashboardPage() {
       </section>
       <section className="creator-insights" aria-label="Creator analytics">
         <div className="dashboard-header"><div><p className="section-label">CREATOR TOOLS</p><h2>Creator analytics</h2></div>{isPro && <span className="pro-badge">PRO</span>}</div>
-        {isPro ? <>{analyticsError && <ErrorState message={analyticsError} />}{analytics && <><div className="dashboard-stats"><div className="stat-card"><span>Total views</span><strong>{analytics.totals.views.toLocaleString()}</strong></div><div className="stat-card"><span>Reactions</span><strong>{analytics.totals.reactions}</strong></div><div className="stat-card"><span>Comments</span><strong>{analytics.totals.comments}</strong></div><div className="stat-card"><span>Bookmarks</span><strong>{analytics.totals.bookmarks}</strong></div></div><p className="activity-note">{analytics.totals.recentViews} reading visits in the last 30 days.</p><h3>Top articles</h3>{analytics.topArticles.length ? analytics.topArticles.map((post) => <p className="insight-row" key={post._id}><Link to={`/post/${post.slug}`}>{post.title}</Link><strong>{post.viewCount.toLocaleString()} views</strong></p>) : <p>Publish an article to start seeing its performance.</p>}<h3>Publishing schedule</h3>{analytics.schedule.length ? analytics.schedule.map((post) => <p className="insight-row" key={post._id}><Link to={`/editor/${post._id}`}>{post.title}</Link><span>{new Date(post.scheduledAt).toLocaleString()}</span></p>) : <p>No articles scheduled.</p>}</>}</> : <div className="locked-preview"><h3>Understand which articles resonate with your audience.</h3><p>Unlock creator analytics, scheduled publishing, cover images, and version history.</p><Link className="button button-primary" to="/pricing">Unlock with PRO</Link></div>}
+        {isPro ? <>{analyticsError && <ErrorState message={analyticsError} />}{analytics && <><div className="dashboard-stats"><div className="stat-card"><span>Total views</span><strong>{analytics.totals.views.toLocaleString()}</strong></div><div className="stat-card"><span>Reactions</span><strong>{analytics.totals.reactions}</strong></div><div className="stat-card"><span>Comments</span><strong>{analytics.totals.comments}</strong></div><div className="stat-card"><span>Bookmarks</span><strong>{analytics.totals.bookmarks}</strong></div></div><p className="activity-note">{analytics.totals.recentViews} reading visits in the last 30 days.</p><h3>Views over the last 30 days</h3><div className="views-chart" role="img" aria-label="Daily reader visits over the last 30 days">{(analytics.viewsByDay || []).map((day) => <span key={day.date} title={`${day.date}: ${day.views} ${day.views === 1 ? "view" : "views"}`} style={{ height: `${maxDailyViews ? (day.views / maxDailyViews) * 100 : 0}%` }} />)}</div><p className="chart-caption">Daily unique reading visits. Only real, recorded views are shown.</p><h3>Top articles</h3>{analytics.topArticles.length ? analytics.topArticles.map((post) => <p className="insight-row" key={post._id}><Link to={`/post/${post.slug}`}>{post.title}</Link><strong>{post.viewCount.toLocaleString()} views</strong></p>) : <p>Publish an article to start seeing its performance.</p>}<h3>Publishing schedule</h3>{analytics.schedule.length ? analytics.schedule.map((post) => <p className="insight-row" key={post._id}><Link to={`/editor/${post._id}`}>{post.title}</Link><span>{formatScheduledAt(post.scheduledAt)}</span></p>) : <p>No articles scheduled.</p>}</>}</> : <div className="pro-feature-grid">{[
+          ["Creator analytics", "See real views, reactions, comments, and bookmarks across your articles."],
+          ["Scheduled publishing", "Choose a future date and let your article publish on time."],
+          ["Version history", "Review earlier article edits and restore a saved version."],
+          ["Cover images", "Give published articles a clear visual introduction."],
+          ["Featured article", "Pin one published story at the top of your writer profile."],
+        ].map(([title, description]) => <article className="pro-feature-card" key={title}><span aria-hidden="true">▣</span><div><h3>{title}</h3><p>{description}</p></div><Link to="/pricing">Explore PRO</Link></article>)}</div>}
       </section>
       <section className="dashboard-layout">
         <div className="dashboard-header"><div><p className="section-label">ARTICLE MANAGEMENT</p><h2>Your articles</h2></div><div className="dashboard-filters">{Object.entries(FILTERS).map(([key, label]) => <button key={key} className={`filter-chip ${filter === key ? "active" : ""}`} onClick={() => setFilter(key)} type="button">{label}</button>)}</div></div>

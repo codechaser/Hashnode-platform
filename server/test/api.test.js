@@ -80,6 +80,8 @@ describe("PRO creator tools", () => {
     assert.equal(analytics.status, 200);
     assert.equal(analytics.data.totals.views, 1);
     assert.equal(analytics.data.totals.articles, 1);
+    assert.equal(analytics.data.viewsByDay.length, 30);
+    assert.equal(analytics.data.viewsByDay.reduce((total, day) => total + day.views, 0), 1);
     await activate(other, "cancelled");
     assert.equal((await request(baseUrl, "/api/posts/analytics", { token: other.token })).status, 403);
     await Subscription.updateOne({ user: other.id }, { status: "past_due", currentPeriodEnd: new Date(Date.now() + 86400000) });
@@ -97,6 +99,10 @@ describe("PRO creator tools", () => {
     const scheduled = await createPost(baseUrl, pro, { status: "scheduled", scheduledAt });
     assert.equal(scheduled.status, 201);
     assert.equal(scheduled.data.post.status, "scheduled");
+    const analytics = await request(baseUrl, "/api/posts/analytics", { token: pro.token });
+    assert.equal(analytics.status, 200);
+    assert.equal(analytics.data.schedule.length, 1);
+    assert.equal(analytics.data.schedule[0].scheduledAt, scheduledAt);
     assert.equal((await request(baseUrl, "/api/posts/" + scheduled.payload.slug)).status, 404);
     const { publishDuePosts } = require("../controllers/creatorController");
     await Post.updateOne({ _id: scheduled.data.post._id }, { scheduledAt: new Date(Date.now() - 1000) });
@@ -116,9 +122,11 @@ describe("PRO creator tools", () => {
     assert.equal(update.status, 200);
     const history = await request(baseUrl, "/api/posts/" + post.data.post._id + "/revisions", { token: owner.token });
     assert.equal(history.data.revisions.length, 1);
+    assert.equal((await request(baseUrl, "/api/posts/" + post.data.post._id + "/revisions/" + history.data.revisions[0]._id + "/restore", { method: "POST", token: other.token })).status, 404);
     const restore = await request(baseUrl, "/api/posts/" + post.data.post._id + "/revisions/" + history.data.revisions[0]._id + "/restore", { method: "POST", token: owner.token });
     assert.equal(restore.status, 200);
     assert.equal(restore.data.post.title, post.payload.title);
+    assert.equal(restore.data.post.status, "draft");
     const afterRestore = await request(baseUrl, "/api/posts/" + post.data.post._id + "/revisions", { token: owner.token });
     assert.equal(afterRestore.data.revisions.length, 2);
     assert.equal(afterRestore.data.revisions[0].title, "Edited title");
@@ -344,8 +352,10 @@ describe("posts and ownership", () => {
 describe("public feed and articles", () => {
   test("filters published posts, searches titles, filters tags, and returns safe pagination", async () => {
     const owner = await createAuthenticatedUser(baseUrl, "Public Author");
-    await createPost(baseUrl, owner, { title: "JavaScript Testing", tags: ["JavaScript"], status: "published" });
-    await createPost(baseUrl, owner, { title: "Python Testing", tags: ["Python"], status: "published" });
+    const javascript = await createPost(baseUrl, owner, { title: "JavaScript Testing", tags: ["JavaScript"], status: "published" });
+    const python = await createPost(baseUrl, owner, { title: "Python Testing", tags: ["Python"], status: "published" });
+    await Post.updateOne({ _id: javascript.data.post._id }, { viewCount: 2 });
+    await Post.updateOne({ _id: python.data.post._id }, { viewCount: 9 });
     const draft = await createPost(baseUrl, owner, { title: "Hidden Draft", tags: ["JavaScript"], status: "draft" });
     const pageOne = await request(baseUrl, "/api/posts/feed?page=1&limit=1");
     const pageTwo = await request(baseUrl, "/api/posts/feed?page=2&limit=1");
@@ -353,6 +363,7 @@ describe("public feed and articles", () => {
     const tag = await request(baseUrl, "/api/posts/feed?tag=JAVASCRIPT");
     const combined = await request(baseUrl, "/api/posts/feed?search=javascript&tag=javascript");
     const invalid = await request(baseUrl, "/api/posts/feed?page=-1&limit=999");
+    const popular = await request(baseUrl, "/api/posts/feed?sort=popular");
     const draftPublic = await request(baseUrl, `/api/posts/${draft.payload.slug}`);
 
     assert.equal(pageOne.status, 200);
@@ -369,6 +380,7 @@ describe("public feed and articles", () => {
     assert.equal(invalid.data.page, 1);
     assert.equal(invalid.data.limit, 50);
     assert.equal(draftPublic.status, 404);
+    assert.equal(popular.data.posts[0].slug, python.payload.slug);
 
     for (const post of pageOne.data.posts) {
       assert.equal("password" in post.author, false);

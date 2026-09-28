@@ -6,7 +6,8 @@ A Pure MERN blogging platform for publishing and discovering developer articles.
 
 - JWT and bcrypt authentication
 - Draft and published articles with ownership protection
-- Public feed, title search, tags, pagination, trending topics from the last 30 days, and active writer suggestions from the last 90 days
+- Public feed with latest and most-read sorting, title search, tags, pagination, trending topics from the last 30 days, and active writer suggestions from the last 90 days
+- Community search across published article titles, public writer names/usernames, and topics
 - Searchable public member directory, profiles, follower discovery, notifications, reactions, comments, bookmarks, and follows
 - Dashboard, editor, settings, and light/dark/system themes
 - PRO creator analytics, scheduled publishing, version history, HTTPS cover images, and featured articles
@@ -102,7 +103,7 @@ FREE accounts include article drafts and publishing, Markdown, tags, profiles, b
 
 PRO access is decided by the backend from the existing subscription record: plan must be `pro`, status must be `active`, and the current period end must be in the future. A pending Razorpay subscription does not unlock creator tools. Payment verification and webhook processing continue to control subscription activation.
 
-Creator endpoints include `GET /api/posts/analytics`, `GET /api/posts/:id/revisions`, `POST /api/posts/:id/revisions/:revisionId/restore`, `PUT /api/posts/:id/cover`, and `POST /api/users/me/featured`. They require authentication, a valid active PRO period, and ownership where an article is involved. Cover images use an HTTPS image URL; this repository does not include a hosted upload provider or store media credentials.
+Creator endpoints include `GET /api/posts/analytics`, `GET /api/posts/:id/revisions`, `POST /api/posts/:id/revisions/:revisionId/restore`, `PUT /api/posts/:id/cover`, and `POST /api/users/me/featured`. Analytics include lifetime totals, top published articles, scheduled posts, and daily unique reading visits for the last 30 days. They require authentication, a valid active PRO period, and ownership where an article is involved. Cover images use an HTTPS image URL; this repository does not include a hosted upload provider or store media credentials.
 
 Scheduled publishing stores a future `scheduledAt` and `scheduled` status. The Render-style long running server checks due posts every minute, and public feed/article reads also publish due posts. No queue service is required. On serverless hosting, configure a scheduled invocation or use a persistent backend process for timely publishing.
 

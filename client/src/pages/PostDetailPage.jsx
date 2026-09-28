@@ -24,6 +24,11 @@ function PostDetailPage() {
   const [bookmarked, setBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [bookmarkError, setBookmarkError] = useState("");
+  const [followState, setFollowState] = useState({ following: false, followers: 0 });
+  const [followLoading, setFollowLoading] = useState(false);
+  const [followError, setFollowError] = useState("");
+  const [authorPosts, setAuthorPosts] = useState([]);
+  const [readingProgress, setReadingProgress] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -31,6 +36,9 @@ function PostDetailPage() {
     async function loadPost() {
       setLoading(true);
       setError("");
+      setRelated([]);
+      setAuthorPosts([]);
+      setFollowError("");
       try {
         const response = await api.get(`/api/posts/${encodeURIComponent(slug)}`);
         const currentPost = response?.data?.post;
@@ -40,20 +48,24 @@ function PostDetailPage() {
           return;
         }
         setPost(currentPost);
-        const reactionResponse = await api.get(`/api/posts/${currentPost._id}/reaction`);
-        if (active) {
-          setReaction({
-            count: reactionResponse?.data?.count ?? currentPost.reactionCount ?? 0,
-            reacted: Boolean(reactionResponse?.data?.reacted),
-          });
-        }
-        const bookmarkResponse = await api.get(`/api/posts/${currentPost._id}/bookmark`);
-        if (active) setBookmarked(Boolean(bookmarkResponse?.data?.bookmarked));
-        if (currentPost.tags?.[0]) {
-          const relatedResponse = await api.get("/api/posts/feed", { params: { tag: currentPost.tags[0], limit: 3 } });
-          const relatedPosts = relatedResponse?.data?.posts || [];
-          setRelated(relatedPosts.filter((item) => item.slug !== slug).slice(0, 2));
-        }
+        const authorUsername = currentPost.author?.username;
+        const tasks = [
+          api.get(`/api/posts/${currentPost._id}/reaction`),
+          api.get(`/api/posts/${currentPost._id}/bookmark`),
+          authorUsername ? api.get(`/api/users/${encodeURIComponent(authorUsername)}/follow-status`) : Promise.resolve(null),
+          authorUsername ? api.get(`/api/users/${encodeURIComponent(authorUsername)}`) : Promise.resolve(null),
+          currentPost.tags?.[0] ? api.get("/api/posts/feed", { params: { tag: currentPost.tags[0], limit: 3 } }) : Promise.resolve(null),
+        ];
+        const [reactionResult, bookmarkResult, followResult, profileResult, relatedResult] = await Promise.allSettled(tasks);
+        if (!active) return;
+        if (reactionResult.status === "fulfilled") setReaction({
+          count: reactionResult.value?.data?.count ?? currentPost.reactionCount ?? 0,
+          reacted: Boolean(reactionResult.value?.data?.reacted),
+        });
+        if (bookmarkResult.status === "fulfilled") setBookmarked(Boolean(bookmarkResult.value?.data?.bookmarked));
+        if (followResult.status === "fulfilled" && followResult.value) setFollowState(followResult.value.data);
+        if (profileResult.status === "fulfilled" && profileResult.value) setAuthorPosts((profileResult.value.data.posts || []).filter((item) => item.slug !== currentPost.slug).slice(0, 2));
+        if (relatedResult.status === "fulfilled" && relatedResult.value) setRelated((relatedResult.value.data.posts || []).filter((item) => item.slug !== currentPost.slug).slice(0, 2));
       } catch (err) {
         if (active) setError(err?.response?.data?.message || "Unable to load this article.");
       } finally {
@@ -64,6 +76,39 @@ function PostDetailPage() {
     loadPost();
     return () => { active = false; };
   }, [slug]);
+
+  useEffect(() => {
+    const updateProgress = () => {
+      const article = document.querySelector(".article-reading-layout");
+      if (!article) return;
+      const articleTop = article.getBoundingClientRect().top + window.scrollY;
+      const scrollable = article.offsetHeight - window.innerHeight;
+      setReadingProgress(scrollable > 0 ? Math.min(100, Math.max(0, ((window.scrollY - articleTop) / scrollable) * 100)) : 0);
+    };
+    updateProgress();
+    window.addEventListener("scroll", updateProgress, { passive: true });
+    window.addEventListener("resize", updateProgress);
+    return () => { window.removeEventListener("scroll", updateProgress); window.removeEventListener("resize", updateProgress); };
+  }, [post]);
+
+  async function toggleFollow() {
+    if (!user) {
+      navigate("/login", { state: { from: `/post/${slug}` } });
+      return;
+    }
+    if (!author?.username || user.username === author.username || followLoading) return;
+    setFollowLoading(true);
+    setFollowError("");
+    try {
+      const method = followState.following ? "delete" : "post";
+      const { data } = await api[method](`/api/users/${encodeURIComponent(author.username)}/follow`);
+      setFollowState(data);
+    } catch (err) {
+      setFollowError(err?.response?.data?.message || "Unable to update follow status.");
+    } finally {
+      setFollowLoading(false);
+    }
+  }
 
   async function toggleReaction() {
     if (!user) {
@@ -128,13 +173,16 @@ function PostDetailPage() {
 
   return (
     <div className="page-wrap article-page">
+      <div className="reading-progress" aria-hidden="true"><span style={{ width: `${readingProgress}%` }} /></div>
       <Link className="back-link" to="/">&lt;- Back to explore</Link>
       <article className="article-reading-layout">
+        {post.coverImage && <img className="article-hero-cover" src={post.coverImage} alt="" referrerPolicy="no-referrer" />}
         <header className="article-header">
           <div className="article-tags">{(post.tags || []).map((tag) => <TagBadge key={tag}>{tag}</TagBadge>)}</div>
           <h1>{post.title}</h1>
           <p className="article-lede">{post.excerpt || "A practical note from the Hashnode community."}</p>
-          <div className="article-author-row"><span className="avatar">{authorName.charAt(0).toUpperCase()}</span><div><strong>{authorName}</strong><span>{formatDate(post.createdAt)} <span aria-hidden="true">·</span> {getReadingTime(post.content)}</span></div></div>
+          <div className="article-author-row">{author?.avatarUrl ? <img className="avatar article-author-avatar" src={author.avatarUrl} alt="" /> : <span className="avatar">{authorName.charAt(0).toUpperCase()}</span>}<div>{author?.username ? <Link className="article-author-link" to={`/profile/${encodeURIComponent(author.username)}`}><strong>{authorName}</strong></Link> : <strong>{authorName}</strong>}<span>{formatDate(post.createdAt)} <span aria-hidden="true">·</span> {getReadingTime(post.content)}</span></div>{author?.username && user?.username !== author.username && <button type="button" className="button button-secondary article-follow-button" disabled={followLoading} onClick={toggleFollow}>{followLoading ? "Saving…" : followState.following ? "Following" : "Follow"}</button>}</div>
+          {followError && <p className="form-message error" role="alert">{followError}</p>}
         </header>
         <div className="article-body"><MarkdownRenderer content={post.content} /></div>
         <footer className="article-actions">
@@ -154,6 +202,7 @@ function PostDetailPage() {
       </article>
       <CommentsSection post={post} />
       {related.length > 0 && <section className="related-section"><div className="section-heading"><p className="section-label">KEEP READING</p><h2>More like this</h2></div><div className="article-grid">{related.map((item) => <ArticleCard key={item._id || item.slug} post={item} />)}</div></section>}
+      {authorPosts.length > 0 && <section className="related-section"><div className="section-heading"><p className="section-label">FROM THE WRITER</p><h2>More by {authorName}</h2></div><div className="article-grid">{authorPosts.map((item) => <ArticleCard key={item._id || item.slug} post={item} />)}</div></section>}
     </div>
   );
 }

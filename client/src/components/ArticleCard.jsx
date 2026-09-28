@@ -7,11 +7,17 @@ const getReadingTime = (content = "") => `${Math.max(1, Math.ceil(content.trim()
 function ArticleCard({ post, featured = false }) {
   const author = typeof post.author === "object" ? post.author : null;
   const authorName = author?.name || post.author || "Hashnode author";
+  const metadata = [
+    typeof post.content === "string" && post.content.trim() ? getReadingTime(post.content) : null,
+    typeof post.viewCount === "number" ? `${post.viewCount.toLocaleString()} views` : null,
+    typeof post.reactionCount === "number" ? `${post.reactionCount.toLocaleString()} reactions` : null,
+    typeof post.commentCount === "number" ? `${post.commentCount.toLocaleString()} comments` : null,
+  ].filter(Boolean).join(" · ");
 
   return (
     <article className={`article-card ${featured ? "article-card-featured" : ""}`}>
       {post.coverImage && <img className="article-cover" src={post.coverImage} alt="" loading="lazy" referrerPolicy="no-referrer" />}
-      <div className="article-card-topline"><span className="article-kicker">{post.status === "draft" ? "Draft" : post.status === "scheduled" ? "Scheduled" : "Article"}</span><span>{getReadingTime(post.content)} <span aria-hidden="true">·</span> {post.reactionCount || 0} likes</span></div>
+      <div className="article-card-topline"><span className="article-kicker">{post.status === "draft" ? "Draft" : post.status === "scheduled" ? "Scheduled" : "Article"}</span><span>{metadata}</span></div>
       <h2><Link to={`/post/${post.slug}`}>{post.title}</Link></h2>
       <p className="article-excerpt">{post.excerpt || "A thoughtful piece from the Hashnode community."}</p>
       <div className="article-tags">{(post.tags || []).slice(0, 4).map((tag) => <TagBadge key={tag}>{tag}</TagBadge>)}</div>

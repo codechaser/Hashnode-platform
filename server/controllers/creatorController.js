@@ -11,16 +11,31 @@ const User = require("../models/User");
 async function getAnalytics(req, res) {
   try {
     const author = req.user.id;
-    const posts = await Post.find({ author }).select("_id title slug status viewCount updatedAt").sort({ viewCount: -1 }).lean();
+    const posts = await Post.find({ author }).select("_id title slug status viewCount updatedAt scheduledAt").sort({ viewCount: -1 }).lean();
     const ids = posts.map((post) => post._id);
-    const [reactions, comments, bookmarks, recentViews] = await Promise.all([
+    const published = posts.filter((post) => post.status === "published");
+    const publishedIds = published.map((post) => post._id);
+    const windowStart = new Date();
+    windowStart.setUTCDate(windowStart.getUTCDate() - 29);
+    windowStart.setUTCHours(0, 0, 0, 0);
+    const [reactions, comments, bookmarks, recentViews, dailyViews] = await Promise.all([
       Reaction.countDocuments({ post: { $in: ids } }),
       Comment.countDocuments({ post: { $in: ids } }),
       Bookmark.countDocuments({ post: { $in: ids } }),
-      PostView.countDocuments({ post: { $in: ids }, viewedAt: { $gte: new Date(Date.now() - 30 * 86400000) } }),
+      PostView.countDocuments({ post: { $in: publishedIds }, viewedAt: { $gte: windowStart } }),
+      PostView.aggregate([
+        { $match: { post: { $in: publishedIds }, viewedAt: { $gte: windowStart } } },
+        { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$viewedAt" } }, views: { $sum: 1 } } },
+      ]),
     ]);
-    const published = posts.filter((post) => post.status === "published");
-    return res.json({ totals: { views: published.reduce((sum, post) => sum + (post.viewCount || 0), 0), articles: published.length, drafts: posts.filter((post) => post.status === "draft").length, reactions, comments, bookmarks, recentViews }, topArticles: published.slice(0, 5), schedule: posts.filter((post) => post.status === "scheduled").sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt)) });
+    const dailyCounts = new Map(dailyViews.map((item) => [item._id, item.views]));
+    const viewsByDay = Array.from({ length: 30 }, (_, index) => {
+      const day = new Date(windowStart);
+      day.setUTCDate(day.getUTCDate() + index);
+      const date = day.toISOString().slice(0, 10);
+      return { date, views: dailyCounts.get(date) || 0 };
+    });
+    return res.json({ totals: { views: published.reduce((sum, post) => sum + (post.viewCount || 0), 0), articles: published.length, drafts: posts.filter((post) => post.status === "draft").length, reactions, comments, bookmarks, recentViews }, viewsByDay, topArticles: published.slice(0, 5), schedule: posts.filter((post) => post.status === "scheduled").sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt)) });
   } catch (error) { console.error(`Analytics error: ${error.message}`); return res.status(500).json({ message: "Unable to fetch creator analytics" }); }
 }
 

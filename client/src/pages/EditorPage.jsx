@@ -164,10 +164,9 @@ function EditorPage() {
       }
 
       const post = response?.data?.post;
-      const nextRoute = post?._id ? `/dashboard` : "/dashboard";
       setDirty(false);
       setSuccess(editing ? "Post updated." : "Post created.");
-      navigate(nextRoute);
+      if (!editing || !post?._id) navigate("/dashboard");
     } catch (err) {
       const message = err?.response?.data?.message || "Unable to save this post.";
       setError(message === "Authentication required" ? "Your session is expired or invalid. Please log in again." : message);
@@ -188,7 +187,7 @@ function EditorPage() {
             <p className="eyebrow">{editing ? "EDIT POST" : "CREATE POST"}</p>
             <h1>{editing ? "Edit post" : "Create post"}</h1>
           </div>
-          <div><span className="save-indicator">{dirty ? "Unsaved changes" : "All changes saved"}</span><div className="editor-view-switch">
+          <div><span className="save-indicator" role="status">{saving ? "Saving…" : dirty ? "Unsaved changes" : success ? "Saved just now" : editing ? "Saved" : "Ready to write"}</span><div className="editor-view-switch">
             <button className={view === "write" ? "active" : ""} type="button" onClick={() => setView("write")}>Write</button>
             <button className={view === "preview" ? "active" : ""} type="button" onClick={() => setView("preview")}>Preview</button>
           </div></div>

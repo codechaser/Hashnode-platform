@@ -15,6 +15,7 @@ import BookmarksPage from "./pages/BookmarksPage.jsx";
 import PricingPage from "./pages/PricingPage.jsx";
 import WritersPage from "./pages/WritersPage.jsx";
 import NotificationsPage from "./pages/NotificationsPage.jsx";
+import SearchPage from "./pages/SearchPage.jsx";
 import { SubscriptionProvider } from "./context/SubscriptionContext.jsx";
 
 function AppShell() {
@@ -27,6 +28,7 @@ function AppShell() {
         <Routes>
           <Route path="/" element={<FeedPage />} />
           <Route path="/writers" element={<WritersPage />} />
+          <Route path="/search" element={<SearchPage />} />
           <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
           <Route path="/post/:slug" element={<PostDetailPage />} />
           <Route path="/login" element={<LoginPage />} />

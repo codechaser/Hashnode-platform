@@ -13,6 +13,9 @@ function FeedPage() {
   const [tags, setTags] = useState([]);
   const [trendingTags, setTrendingTags] = useState([]);
   const [suggestedWriters, setSuggestedWriters] = useState([]);
+  const [followingWriterIds, setFollowingWriterIds] = useState(() => new Set());
+  const [followWriterLoading, setFollowWriterLoading] = useState("");
+  const [followWriterError, setFollowWriterError] = useState("");
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -22,6 +25,7 @@ function FeedPage() {
   const search = searchParams.get("search") || "";
   const selectedTag = searchParams.get("tag") || "";
   const feedMode = searchParams.get("feed") === "following" ? "following" : "latest";
+  const sort = searchParams.get("sort") === "popular" ? "popular" : "recent";
 
   async function loadFeed(nextPage = 1, append = false) {
     if (append) {
@@ -33,7 +37,7 @@ function FeedPage() {
 
     try {
       const [feedResult, tagResult, trendingResult, writersResult] = await Promise.allSettled([
-        api.get(feedMode === "following" ? "/api/posts/feed/following" : "/api/posts/feed", { params: { search, tag: selectedTag, page: nextPage, limit: 10 } }),
+        api.get(feedMode === "following" ? "/api/posts/feed/following" : "/api/posts/feed", { params: { search, tag: selectedTag, page: nextPage, limit: 10, ...(sort === "popular" && feedMode === "latest" ? { sort } : {}) } }),
         api.get("/api/tags"),
         api.get("/api/tags/trending"),
         api.get("/api/users/discover"),
@@ -61,7 +65,7 @@ function FeedPage() {
 
   useEffect(() => {
     loadFeed(1, false);
-  }, [search, selectedTag, feedMode]);
+  }, [search, selectedTag, feedMode, sort]);
 
   function handleSearch(event) {
     event.preventDefault();
@@ -69,6 +73,7 @@ function FeedPage() {
     if (searchInput.trim()) next.search = searchInput.trim();
     if (selectedTag) next.tag = selectedTag;
     if (feedMode === "following") next.feed = feedMode;
+    if (sort === "popular" && feedMode === "latest") next.sort = sort;
     setSearchParams(next);
   }
 
@@ -77,6 +82,7 @@ function FeedPage() {
     if (search) next.search = search;
     if (tag) next.tag = tag;
     if (feedMode === "following") next.feed = feedMode;
+    if (sort === "popular" && feedMode === "latest") next.sort = sort;
     setSearchParams(next);
   }
 
@@ -88,6 +94,7 @@ function FeedPage() {
     const next = {};
     if (search) next.search = search;
     if (selectedTag) next.tag = selectedTag;
+    if (sort === "popular" && mode === "latest") next.sort = sort;
     if (mode === "following") next.feed = mode;
     setSearchParams(next);
   }
@@ -95,6 +102,24 @@ function FeedPage() {
   function loadMore() {
     if (loading || loadingMore || !hasNextPage) return;
     loadFeed(page + 1, true);
+  }
+
+  async function followSuggestedWriter(writer) {
+    if (!user) {
+      navigate("/login", { state: { from: "/" } });
+      return;
+    }
+    if (followWriterLoading || followingWriterIds.has(writer.id)) return;
+    setFollowWriterLoading(writer.id);
+    setFollowWriterError("");
+    try {
+      await api.post(`/api/users/${encodeURIComponent(writer.username)}/follow`);
+      setFollowingWriterIds((current) => new Set(current).add(writer.id));
+    } catch (err) {
+      setFollowWriterError(err?.response?.data?.message || "Unable to follow this writer.");
+    } finally {
+      setFollowWriterLoading("");
+    }
   }
 
   return (
@@ -121,22 +146,26 @@ function FeedPage() {
         </div>}
         {suggestedWriters.length > 0 && <div className="discovery-panel">
           <div className="discovery-heading"><div><p className="section-label">ACTIVE IN THE LAST 90 DAYS</p><h2>Writers to follow</h2></div><span aria-hidden="true">✳</span></div>
-          <div className="discovery-writers">{suggestedWriters.map((writer) => <Link className="discovery-writer" to={`/profile/${writer.username}`} key={writer.id}>
-            {writer.avatarUrl ? <img src={writer.avatarUrl} alt="" /> : <span className="discovery-avatar" aria-hidden="true">{writer.name?.slice(0, 1)?.toUpperCase()}</span>}
-            <span className="discovery-writer-copy"><strong>{writer.name}</strong><small>@{writer.username} · {writer.articleCount} recent {writer.articleCount === 1 ? "article" : "articles"}</small>{writer.bio && <small className="discovery-bio">{writer.bio}</small>}</span>
-            <span className="discovery-follow" aria-hidden="true">View</span>
-          </Link>)}</div>
+          <div className="discovery-writers">{suggestedWriters.map((writer) => <article className="discovery-writer-card" key={writer.id}>
+            <Link className="discovery-writer" to={`/profile/${writer.username}`}>
+              {writer.avatarUrl ? <img src={writer.avatarUrl} alt="" /> : <span className="discovery-avatar" aria-hidden="true">{writer.name?.slice(0, 1)?.toUpperCase()}</span>}
+              <span className="discovery-writer-copy"><strong>{writer.name}</strong><small>@{writer.username} · {writer.articleCount} recent {writer.articleCount === 1 ? "article" : "articles"}</small>{writer.bio && <small className="discovery-bio">{writer.bio}</small>}</span>
+            </Link>
+            <button className="discovery-follow" type="button" disabled={followWriterLoading === writer.id || followingWriterIds.has(writer.id)} onClick={() => followSuggestedWriter(writer)}>{followWriterLoading === writer.id ? "Following…" : followingWriterIds.has(writer.id) ? "Following" : user ? "Follow" : "Log in to follow"}</button>
+          </article>)}</div>
+          {followWriterError && <p className="form-message error" role="alert">{followWriterError}</p>}
         </div>}
       </section>}
 
       <section className="feed-toolbar" aria-label="Explore articles">
         <div>
-          <p className="section-label">{feedMode === "following" ? "YOUR READING CIRCLE" : "LATEST FROM THE COMMUNITY"}</p>
+          <p className="section-label">{feedMode === "following" ? "YOUR READING CIRCLE" : sort === "popular" ? "MOST READ BY THE COMMUNITY" : "LATEST FROM THE COMMUNITY"}</p>
           <h2>Explore ideas</h2>
           <div className="feed-mode-tabs" role="tablist" aria-label="Choose article feed">
             <button type="button" role="tab" aria-selected={feedMode === "latest"} className={feedMode === "latest" ? "active" : ""} onClick={() => selectFeedMode("latest")}>Everyone</button>
             <button type="button" role="tab" aria-selected={feedMode === "following"} className={feedMode === "following" ? "active" : ""} onClick={() => selectFeedMode("following")}>Following</button>
           </div>
+          {feedMode === "latest" && <label className="feed-sort-label">Order by <select value={sort} onChange={(event) => { const next = {}; if (search) next.search = search; if (selectedTag) next.tag = selectedTag; if (event.target.value === "popular") next.sort = "popular"; setSearchParams(next); }}><option value="recent">Latest</option><option value="popular">Most read</option></select></label>}
         </div>
         <form className="search-form" onSubmit={handleSearch} role="search">
           <label className="sr-only" htmlFor="feed-search">Search article titles</label>

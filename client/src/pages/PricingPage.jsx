@@ -5,10 +5,14 @@ import { useSubscription } from "../context/SubscriptionContext.jsx";
 import api from "../services/api.js";
 
 const features = [
-  ["Read and save articles", true, true],
-  ["Publish to the Hashnode/lab community", true, true],
-  ["Pro publishing tools", false, true],
-  ["Priority support", false, true],
+  ["Articles, drafts, and Markdown", true, true],
+  ["Tags, profiles, and community", true, true],
+  ["Bookmarks, comments, reactions, and follows", true, true],
+  ["Creator analytics", false, true],
+  ["Scheduled publishing", false, true],
+  ["Version history and restore", false, true],
+  ["Cover images", false, true],
+  ["Featured article and PRO badge", false, true],
 ];
 
 function PricingPage() {
@@ -64,7 +68,7 @@ function PricingPage() {
           <div className="pricing-card-top"><span className="section-label">The essentials</span>{!isPro && <span className="current-plan">Current plan</span>}</div>
           <h2>FREE</h2>
           <p className="price"><strong>₹0</strong><span>forever</span></p>
-          <p className="pricing-copy">A calm home for reading, saving, and sharing useful ideas.</p>
+          <p className="pricing-copy">A complete home for publishing developer articles and joining the community.</p>
           <Link className="button button-secondary pricing-action" to={user ? "/dashboard" : "/register"}>{user ? "Your workspace" : "Get started"}</Link>
         </section>
 
@@ -72,9 +76,9 @@ function PricingPage() {
           <div className="pricing-card-top"><span className="section-label">For committed creators</span>{isPro && <span className="current-plan">Current plan</span>}</div>
           <h2>PRO</h2>
           <p className="price"><strong>₹199</strong><span>/ month</span></p>
-          <p className="annual-price">or ₹1,999 / year</p>
-          <p className="pricing-copy">More room for your publishing practice, with tools that stay out of the way.</p>
-          <button className="button button-primary pricing-action" type="button" onClick={isPro ? cancelSubscription : isActivationPending ? undefined : startCheckout} disabled={billingState.status === "loading" || subscription.cancelAtPeriodEnd || isActivationPending}>
+          <p className="pricing-copy">Advanced creator, analytics, and publishing tools for a growing audience.</p>
+          <ul className="pricing-benefits">{features.filter(([, free]) => !free).map(([name]) => <li key={name}>{name}</li>)}</ul>
+          <button className="button button-primary pricing-action" type="button" onClick={isPro ? cancelSubscription : isActivationPending ? undefined : startCheckout} disabled={billingState.status === "loading" || (subscription.cancelAtPeriodEnd && isPro) || isActivationPending}>
             {billingState.status === "loading" ? "Please wait..." : isPro ? "Cancel at period end" : isActivationPending ? "Activating PRO..." : user ? "Upgrade to PRO" : "Log in to upgrade"}
           </button>
           {isActivationPending && <p className="billing-message loading" role="status">Payment received. Razorpay is finalizing your subscription; PRO access will activate once confirmation arrives.</p>}

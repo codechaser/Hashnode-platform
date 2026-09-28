@@ -34,13 +34,18 @@ const postSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ["draft", "published"],
+      enum: ["draft", "scheduled", "published"],
       default: "draft",
     },
+    scheduledAt: { type: Date, default: null },
+    coverImage: { type: String, default: "" },
+    viewCount: { type: Number, default: 0, min: 0 },
   },
   {
     timestamps: true,
   }
 );
+
+postSchema.index({ status: 1, scheduledAt: 1 });
 
 module.exports = mongoose.model("Post", postSchema);

@@ -17,6 +17,7 @@ const {
 
 const router = express.Router();
 
+router.post("/me/featured", authMiddleware, require("../middleware/requirePro"), require("../controllers/creatorController").setFeaturedPost);
 router.get("/me", authMiddleware, getCurrentUserProfile);
 router.put("/me", authMiddleware, updateCurrentUserProfile);
 router.get("/me/bookmarks", authMiddleware, getMyBookmarks);

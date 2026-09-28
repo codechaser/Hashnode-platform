@@ -13,6 +13,8 @@ const {
   deletePost,
 } = require("../controllers/postController");
 const { getComments, createComment } = require("../controllers/commentController");
+const requirePro = require("../middleware/requirePro");
+const { getAnalytics, listRevisions, restoreRevision, setCoverImage } = require("../controllers/creatorController");
 const {
   getBookmark,
   addBookmark,
@@ -21,6 +23,10 @@ const {
 
 const router = express.Router();
 
+router.get("/analytics", requirePro, getAnalytics);
+router.get("/:id/revisions", authMiddleware, requirePro, listRevisions);
+router.post("/:id/revisions/:revisionId/restore", authMiddleware, requirePro, restoreRevision);
+router.put("/:id/cover", authMiddleware, requirePro, setCoverImage);
 router.get("/feed", getPublicFeed);
 router.get("/:id/comments", getComments);
 router.post("/:id/comments", authMiddleware, createComment);
@@ -30,7 +36,7 @@ router.delete("/:id/reaction", authMiddleware, removeReaction);
 router.get("/:id/bookmark", optionalAuthMiddleware, getBookmark);
 router.post("/:id/bookmark", authMiddleware, addBookmark);
 router.delete("/:id/bookmark", authMiddleware, removeBookmark);
-router.get("/:slug", (req, res, next) => {
+router.get("/:slug", optionalAuthMiddleware, (req, res, next) => {
   if (mongoose.Types.ObjectId.isValid(req.params.slug)) {
     req.params.id = req.params.slug;
     return authMiddleware(req, res, () => getPost(req, res));

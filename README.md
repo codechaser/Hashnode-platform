@@ -9,6 +9,7 @@ A Pure MERN blogging platform for publishing and discovering developer articles.
 - Public feed, title search, tags, pagination, and Markdown code highlighting
 - Public profiles, reactions, comments, bookmarks, and follows
 - Dashboard, editor, settings, and light/dark/system themes
+- PRO creator analytics, scheduled publishing, version history, HTTPS cover images, and featured articles
 
 ## Architecture
 
@@ -53,6 +54,7 @@ The API listens on `PORT` (default `5000`) and the Vite development server defau
 - `MONGO_URI`: MongoDB connection string; use a separate database for tests
 - `JWT_SECRET`: long, random secret used to sign authentication tokens
 - `CORS_ORIGIN`: comma-separated allowed frontend origins, such as `https://app.example.com`
+- `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `RAZORPAY_PRO_PLAN_ID`, `RAZORPAY_SUBSCRIPTION_TOTAL_COUNT`: Razorpay Test Mode billing configuration (placeholders are in `server/.env.example`)
 
 ### Frontend (`client/.env`)
 
@@ -92,6 +94,20 @@ The production frontend output is `client/dist`. The backend production start co
 - `/api/posts`: owned post CRUD, public feed, articles, reactions, bookmarks, and comments
 - `/api/tags`: public tags and authenticated tag creation
 - `/api/users`: profiles, settings, bookmarks, and follow relationships
+
+## FREE and PRO
+
+FREE accounts include article drafts and publishing, Markdown, tags, profiles, bookmarks, comments, reactions, follows, and the community feed. PRO adds creator analytics, scheduled publishing, revision history and restore, custom HTTPS cover image URLs, a featured profile article, and a PRO creator badge.
+
+PRO access is decided by the backend from the existing subscription record: plan must be `pro`, status must be `active`, and the current period end must be in the future. A pending Razorpay subscription does not unlock creator tools. Payment verification and webhook processing continue to control subscription activation.
+
+Creator endpoints include `GET /api/posts/analytics`, `GET /api/posts/:id/revisions`, `POST /api/posts/:id/revisions/:revisionId/restore`, `PUT /api/posts/:id/cover`, and `POST /api/users/me/featured`. They require authentication, a valid active PRO period, and ownership where an article is involved. Cover images use an HTTPS image URL; this repository does not include a hosted upload provider or store media credentials.
+
+Scheduled publishing stores a future `scheduledAt` and `scheduled` status. The Render-style long running server checks due posts every minute, and public feed/article reads also publish due posts. No queue service is required. On serverless hosting, configure a scheduled invocation or use a persistent backend process for timely publishing.
+
+Analytics views are counted once per article per visitor/day using a hash of request IP, user agent, and date. The author's authenticated article views are ignored. Counts are approximate and do not identify readers.
+
+Per-visitor view records expire automatically after 40 days using a MongoDB TTL index. The lifetime article total remains in `Post.viewCount`, so retention does not reduce total views.
 
 ## Deployment configuration
 

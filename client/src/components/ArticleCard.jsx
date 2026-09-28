@@ -10,7 +10,8 @@ function ArticleCard({ post, featured = false }) {
 
   return (
     <article className={`article-card ${featured ? "article-card-featured" : ""}`}>
-      <div className="article-card-topline"><span className="article-kicker">{post.status === "draft" ? "Draft" : "Article"}</span><span>{getReadingTime(post.content)} <span aria-hidden="true">·</span> {post.reactionCount || 0} likes</span></div>
+      {post.coverImage && <img className="article-cover" src={post.coverImage} alt="" loading="lazy" referrerPolicy="no-referrer" />}
+      <div className="article-card-topline"><span className="article-kicker">{post.status === "draft" ? "Draft" : post.status === "scheduled" ? "Scheduled" : "Article"}</span><span>{getReadingTime(post.content)} <span aria-hidden="true">·</span> {post.reactionCount || 0} likes</span></div>
       <h2><Link to={`/post/${post.slug}`}>{post.title}</Link></h2>
       <p className="article-excerpt">{post.excerpt || "A thoughtful piece from the Hashnode community."}</p>
       <div className="article-tags">{(post.tags || []).slice(0, 4).map((tag) => <TagBadge key={tag}>{tag}</TagBadge>)}</div>

@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Post = require("../models/Post");
 const Follow = require("../models/Follow");
+const { hasValidProSubscription } = require("../services/subscriptionService");
 
 const usernamePattern = /^[a-z0-9_][a-z0-9_-]{2,29}$/i;
 
@@ -28,16 +29,24 @@ const getPublicProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const [posts, followers, following] = await Promise.all([Post.find({
+    const [posts, followers, following, isPro] = await Promise.all([Post.find({
       author: user._id,
       status: "published",
     })
-      .select("title slug excerpt tags createdAt updatedAt")
+      .select("title slug excerpt tags coverImage viewCount createdAt updatedAt")
       .sort({ createdAt: -1 })
-      .lean(), Follow.countDocuments({ following: user._id }), Follow.countDocuments({ follower: user._id })]);
+      .lean(), Follow.countDocuments({ following: user._id }), Follow.countDocuments({ follower: user._id }), hasValidProSubscription(user._id)]);
+    let featuredArticle = null;
+    let totalViews;
+    if (isPro) {
+      totalViews = posts.reduce((sum, post) => sum + (post.viewCount || 0), 0);
+      const featured = user.featuredPost && posts.find((post) => post._id.toString() === user.featuredPost.toString());
+      featuredArticle = featured || null;
+    }
+    posts.forEach((post) => { delete post.viewCount; });
 
     return res.status(200).json({
-      user: { ...safeProfile(user), followers, following },
+      user: { ...safeProfile(user), followers, following, isPro, ...(isPro ? { totalViews, featuredArticle } : {}) },
       posts,
     });
   } catch (error) {

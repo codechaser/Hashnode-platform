@@ -105,7 +105,9 @@ function ProfilePage() {
             <p className="eyebrow">PUBLIC PROFILE</p>
             <h1>{user.name}</h1>
             <p className="profile-username">@{user.username}</p>
+            {user.isPro && <span className="pro-badge">PRO CREATOR</span>}
             <p className="profile-bio">{user.bio || "No bio yet."}</p>
+            {user.isPro && <p className="creator-stats">{posts.length} published articles <span aria-hidden="true">·</span> {user.totalViews.toLocaleString()} total views</p>}
           </div>
         </div>
         <div className="profile-actions">
@@ -117,6 +119,8 @@ function ProfilePage() {
         </div>
       </section>
       {error && <p className="form-message error" role="alert">{error}</p>}
+
+      {user.isPro && user.featuredArticle && <section className="featured-profile-article"><p className="eyebrow">FEATURED ARTICLE</p><div className="article-grid"><ArticleCard post={{ ...user.featuredArticle, author: user }} featured /></div></section>}
 
       {connections && <div className="connection-backdrop" role="presentation" onClick={() => setConnections(null)}>
         <section className="connection-dialog" role="dialog" aria-modal="true" aria-labelledby="connection-title" onClick={(event) => event.stopPropagation()}>

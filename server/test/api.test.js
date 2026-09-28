@@ -14,6 +14,7 @@ const Subscription = require("../models/Subscription");
 const { isValidProSubscription } = require("../services/subscriptionService");
 const requirePro = require("../middleware/requirePro");
 const Post = require("../models/Post");
+const PostView = require("../models/PostView");
 const {
   request,
   registerUser,
@@ -57,6 +58,117 @@ describe("health", () => {
       status: "ok",
       service: "hashnode-api",
     });
+  });
+});
+
+describe("PRO creator tools", () => {
+  async function activate(user, status = "active", end = new Date(Date.now() + 86400000)) {
+    await Subscription.create({ user: user.id, plan: "pro", status, currentPeriodStart: new Date(), currentPeriodEnd: end });
+  }
+
+  test("analytics require an active subscription and return only the owner's data", async () => {
+    const free = await createAuthenticatedUser(baseUrl, "Analytics Free");
+    const owner = await createAuthenticatedUser(baseUrl, "Analytics Pro");
+    const other = await createAuthenticatedUser(baseUrl, "Analytics Other");
+    assert.equal((await request(baseUrl, "/api/posts/analytics", { token: free.token })).status, 403);
+    await activate(owner, "created");
+    assert.equal((await request(baseUrl, "/api/posts/analytics", { token: owner.token })).status, 403);
+    await Subscription.updateOne({ user: owner.id }, { status: "active" });
+    const article = await createPost(baseUrl, owner, { status: "published" });
+    await request(baseUrl, "/api/posts/" + article.payload.slug);
+    const analytics = await request(baseUrl, "/api/posts/analytics", { token: owner.token });
+    assert.equal(analytics.status, 200);
+    assert.equal(analytics.data.totals.views, 1);
+    assert.equal(analytics.data.totals.articles, 1);
+    await activate(other, "cancelled");
+    assert.equal((await request(baseUrl, "/api/posts/analytics", { token: other.token })).status, 403);
+    await Subscription.updateOne({ user: other.id }, { status: "past_due", currentPeriodEnd: new Date(Date.now() + 86400000) });
+    assert.equal((await request(baseUrl, "/api/posts/analytics", { token: other.token })).status, 403);
+    await Subscription.updateOne({ user: other.id }, { status: "active", currentPeriodEnd: new Date(Date.now() - 1000) });
+    assert.equal((await request(baseUrl, "/api/posts/analytics", { token: other.token })).status, 403);
+  });
+
+  test("only PRO can schedule and scheduled posts publish when due", async () => {
+    const free = await createAuthenticatedUser(baseUrl, "Schedule Free");
+    const pro = await createAuthenticatedUser(baseUrl, "Schedule Pro");
+    const scheduledAt = new Date(Date.now() + 120000).toISOString();
+    assert.equal((await createPost(baseUrl, free, { status: "scheduled", scheduledAt })).status, 403);
+    await activate(pro);
+    const scheduled = await createPost(baseUrl, pro, { status: "scheduled", scheduledAt });
+    assert.equal(scheduled.status, 201);
+    assert.equal(scheduled.data.post.status, "scheduled");
+    assert.equal((await request(baseUrl, "/api/posts/" + scheduled.payload.slug)).status, 404);
+    const { publishDuePosts } = require("../controllers/creatorController");
+    await Post.updateOne({ _id: scheduled.data.post._id }, { scheduledAt: new Date(Date.now() - 1000) });
+    await publishDuePosts();
+    assert.equal((await request(baseUrl, "/api/posts/" + scheduled.payload.slug)).status, 200);
+  });
+
+  test("revisions enforce entitlement and ownership, and restore preserves the current state", async () => {
+    const owner = await createAuthenticatedUser(baseUrl, "Revision Pro");
+    const other = await createAuthenticatedUser(baseUrl, "Revision Other");
+    const post = await createPost(baseUrl, owner, { status: "draft" });
+    assert.equal((await request(baseUrl, "/api/posts/" + post.data.post._id + "/revisions", { token: other.token })).status, 403);
+    await activate(owner);
+    await activate(other);
+    assert.equal((await request(baseUrl, "/api/posts/" + post.data.post._id + "/revisions", { token: other.token })).status, 404);
+    const update = await request(baseUrl, "/api/posts/" + post.data.post._id, { method: "PUT", token: owner.token, body: { ...post.payload, title: "Edited title" } });
+    assert.equal(update.status, 200);
+    const history = await request(baseUrl, "/api/posts/" + post.data.post._id + "/revisions", { token: owner.token });
+    assert.equal(history.data.revisions.length, 1);
+    const restore = await request(baseUrl, "/api/posts/" + post.data.post._id + "/revisions/" + history.data.revisions[0]._id + "/restore", { method: "POST", token: owner.token });
+    assert.equal(restore.status, 200);
+    assert.equal(restore.data.post.title, post.payload.title);
+    const afterRestore = await request(baseUrl, "/api/posts/" + post.data.post._id + "/revisions", { token: owner.token });
+    assert.equal(afterRestore.data.revisions.length, 2);
+    assert.equal(afterRestore.data.revisions[0].title, "Edited title");
+    const repeatRestore = await request(baseUrl, "/api/posts/" + post.data.post._id + "/revisions/" + history.data.revisions[0]._id + "/restore", { method: "POST", token: owner.token });
+    assert.equal(repeatRestore.status, 200);
+    assert.equal(repeatRestore.data.restored, false);
+    assert.equal((await request(baseUrl, "/api/posts/" + post.data.post._id + "/revisions", { token: owner.token })).data.revisions.length, 2);
+  });
+
+  test("view count retries safely when the first aggregate increment fails", async () => {
+    const reader = await createAuthenticatedUser(baseUrl, "View Reader");
+    const article = await createPost(baseUrl, reader, { status: "published" });
+    const post = await Post.findById(article.data.post._id);
+    const requestContext = { headers: { "user-agent": "test-reader" }, socket: { remoteAddress: "192.0.2.10" } };
+    const { trackPostView } = require("../controllers/creatorController");
+    const originalUpdateOne = Post.updateOne;
+    let failNextIncrement = true;
+    Post.updateOne = function (filter, update, ...args) {
+      if (failNextIncrement && update?.$inc?.viewCount) {
+        failNextIncrement = false;
+        return Promise.reject(new Error("injected view counter failure"));
+      }
+      return originalUpdateOne.call(this, filter, update, ...args);
+    };
+    try {
+      await assert.rejects(trackPostView(requestContext, post), /injected view counter failure/);
+    } finally {
+      Post.updateOne = originalUpdateOne;
+    }
+    assert.equal(await PostView.countDocuments({ post: post._id }), 0);
+    assert.equal((await Post.findById(post._id)).viewCount, 0);
+    await trackPostView(requestContext, post);
+    await trackPostView(requestContext, post);
+    assert.equal(await PostView.countDocuments({ post: post._id }), 1);
+    assert.equal((await Post.findById(post._id)).viewCount, 1);
+  });
+
+  test("cover images and featured articles require PRO and article ownership", async () => {
+    const free = await createAuthenticatedUser(baseUrl, "Media Free");
+    const owner = await createAuthenticatedUser(baseUrl, "Creator Pro");
+    const other = await createAuthenticatedUser(baseUrl, "Article Other");
+    const ownerPost = await createPost(baseUrl, owner, { status: "published" });
+    const otherPost = await createPost(baseUrl, other, { status: "published" });
+    const coverUrl = "https://images.example.test/cover.png";
+    assert.equal((await request(baseUrl, "/api/posts/" + ownerPost.data.post._id + "/cover", { method: "PUT", token: free.token, body: { coverImage: coverUrl } })).status, 403);
+    assert.equal((await request(baseUrl, "/api/users/me/featured", { method: "POST", token: free.token, body: { postId: ownerPost.data.post._id } })).status, 403);
+    await activate(owner);
+    assert.equal((await request(baseUrl, "/api/posts/" + ownerPost.data.post._id + "/cover", { method: "PUT", token: owner.token, body: { coverImage: coverUrl } })).status, 200);
+    assert.equal((await request(baseUrl, "/api/users/me/featured", { method: "POST", token: owner.token, body: { postId: otherPost.data.post._id } })).status, 404);
+    assert.equal((await request(baseUrl, "/api/users/me/featured", { method: "POST", token: owner.token, body: { postId: ownerPost.data.post._id } })).status, 200);
   });
 });
 

@@ -42,6 +42,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    featuredPost: { type: mongoose.Schema.Types.ObjectId, ref: "Post", default: null },
   },
   {
     timestamps: true,

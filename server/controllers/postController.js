@@ -1,8 +1,11 @@
 const mongoose = require("mongoose");
 const Post = require("../models/Post");
 const Reaction = require("../models/Reaction");
+const Revision = require("../models/Revision");
+const { hasValidProSubscription } = require("../services/subscriptionService");
+const { trackPostView, publishDuePosts } = require("./creatorController");
 
-const allowedStatuses = ["draft", "published"];
+const allowedStatuses = ["draft", "scheduled", "published"];
 
 const isValidPostId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -30,8 +33,10 @@ const validatePostInput = (body, { requireContent = true } = {}) => {
   }
 
   if (status !== undefined && !allowedStatuses.includes(status)) {
-    return "Status must be draft or published";
+    return "Status must be draft, scheduled, or published";
   }
+  if (status === "scheduled" && (!body.scheduledAt || !Number.isFinite(Date.parse(body.scheduledAt)) || Date.parse(body.scheduledAt) <= Date.now())) return "Choose a future scheduled date and time";
+  if (body.coverImage !== undefined && body.coverImage !== "" && (typeof body.coverImage !== "string" || !/^https:\/\//i.test(body.coverImage) || body.coverImage.length > 2048)) return "Cover image must be an HTTPS URL under 2048 characters";
 
   return null;
 };
@@ -50,7 +55,7 @@ const parsePagination = (query) => {
   };
 };
 
-const publicPostFields = "title slug content excerpt author tags status createdAt updatedAt";
+const publicPostFields = "title slug content excerpt author tags status coverImage createdAt updatedAt";
 
 const withReactionCounts = async (posts) => {
   if (!posts.length) {
@@ -71,6 +76,7 @@ const withReactionCounts = async (posts) => {
 
 const getPublicFeed = async (req, res) => {
   try {
+    await publishDuePosts();
     const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
     const { page, limit } = parsePagination(req.query);
     const query = { status: "published" };
@@ -110,6 +116,7 @@ const getPublicPostBySlug = async (req, res) => {
   }
 
   try {
+    await publishDuePosts();
     const post = await Post.findOne({ slug, status: "published" })
       .select(publicPostFields)
       .populate("author", "name username avatarUrl")
@@ -118,6 +125,8 @@ const getPublicPostBySlug = async (req, res) => {
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
     }
+
+    await trackPostView(req, post);
 
     const reactionCount = await Reaction.countDocuments({ post: post._id });
     return res.status(200).json({ post: { ...post, reactionCount } });
@@ -135,7 +144,9 @@ const createPost = async (req, res) => {
   }
 
   try {
-    const { title, slug, content, excerpt, tags, status } = req.body;
+    const { title, slug, content, excerpt, tags, status, scheduledAt, coverImage } = req.body;
+    if ((status === "scheduled" || scheduledAt || coverImage) && !(await hasValidProSubscription(req.user.id))) return res.status(403).json({ message: "An active PRO subscription is required for scheduled publishing and cover images" });
+    if (status === "scheduled" && (!scheduledAt || !Number.isFinite(Date.parse(scheduledAt)) || Date.parse(scheduledAt) <= Date.now())) return res.status(400).json({ message: "Choose a future scheduled date and time" });
     const post = await Post.create({
       title: title.trim(),
       slug: slug.trim(),
@@ -143,6 +154,8 @@ const createPost = async (req, res) => {
       excerpt,
       tags,
       status,
+      scheduledAt: status === "scheduled" ? new Date(scheduledAt) : null,
+      coverImage: coverImage || "",
       author: req.user.id,
     });
 
@@ -216,12 +229,21 @@ const updatePost = async (req, res) => {
       return res.status(403).json({ message: "You do not have access to this post" });
     }
 
-    const allowedFields = ["title", "slug", "content", "excerpt", "tags", "status"];
+    const allowedFields = ["title", "slug", "content", "excerpt", "tags", "status", "scheduledAt", "coverImage"];
+    const scheduleChanged = req.body.status === "scheduled" && post.status !== "scheduled" || req.body.scheduledAt !== undefined && new Date(req.body.scheduledAt).getTime() !== new Date(post.scheduledAt || 0).getTime();
+    const coverChanged = req.body.coverImage !== undefined && req.body.coverImage !== post.coverImage;
+    if ((scheduleChanged || coverChanged) && !(await hasValidProSubscription(req.user.id))) return res.status(403).json({ message: "An active PRO subscription is required for scheduled publishing and cover images" });
+    if (req.body.scheduledAt && req.body.status !== "scheduled") return res.status(400).json({ message: "Scheduled date requires scheduled status" });
+    if (req.body.status === "scheduled" && (!req.body.scheduledAt || !Number.isFinite(Date.parse(req.body.scheduledAt)) || Date.parse(req.body.scheduledAt) <= Date.now())) return res.status(400).json({ message: "Choose a future scheduled date and time" });
+    const changed = ["title", "excerpt", "content", "tags"].some((field) => req.body[field] !== undefined && JSON.stringify(req.body[field]) !== JSON.stringify(post[field]));
+    if (changed && await hasValidProSubscription(req.user.id)) await Revision.create({ postId: post._id, author: req.user.id, title: post.title, excerpt: post.excerpt, content: post.content, tags: post.tags });
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) {
         post[field] = field === "title" || field === "slug" ? req.body[field].trim() : req.body[field];
       }
     });
+    if (req.body.status !== undefined && req.body.status !== "scheduled") post.scheduledAt = null;
+    if (req.body.status === "scheduled") post.scheduledAt = new Date(req.body.scheduledAt);
 
     await post.save();
     return res.status(200).json({ post });

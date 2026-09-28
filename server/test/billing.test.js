@@ -154,6 +154,16 @@ describe("Razorpay billing integration", () => {
     assert.equal(subscriptionCreateCalls, 1);
   });
 
+  test("allows a new checkout for cancelled and expired subscriptions", async () => {
+    for (const status of ["cancelled", "expired"]) {
+      const user = await createAuthenticatedUser(baseUrl, "Renew " + status);
+      await Subscription.create({ user: user.id, plan: "pro", status, provider: "razorpay", providerSubscriptionId: "old-" + status });
+      const checkout = await request(baseUrl, "/api/billing/subscription-link", { method: "POST", token: user.token });
+      assert.equal(checkout.status, 201, status + " subscription should permit another checkout");
+    }
+    assert.equal(subscriptionCreateCalls, 2);
+  });
+
   test("activates the user mapped to a hosted subscription when Razorpay confirms it", async () => {
     const user = await createAuthenticatedUser(baseUrl, "Webhook Link Creator");
     await request(baseUrl, "/api/billing/subscription-link", { method: "POST", token: user.token });

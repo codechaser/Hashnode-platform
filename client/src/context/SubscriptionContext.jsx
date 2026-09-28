@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "./AuthContext.jsx";
 import api from "../services/api.js";
-import { isSubscriptionActivationPending } from "./subscriptionState.js";
+import { isSubscriptionActivationPending, isSubscriptionPro } from "./subscriptionState.js";
 
 const FREE_SUBSCRIPTION = { plan: "free", status: "inactive", currentPeriodStart: null, currentPeriodEnd: null, cancelAtPeriodEnd: false };
 const SubscriptionContext = createContext(null);
@@ -47,7 +47,7 @@ export function SubscriptionProvider({ children }) {
     return () => { active = false; };
   }, [user]);
 
-  const isPro = subscription.plan === "pro" && subscription.status === "active" && Boolean(subscription.currentPeriodEnd) && new Date(subscription.currentPeriodEnd) > new Date();
+  const isPro = isSubscriptionPro(subscription);
   const isActivationPending = isSubscriptionActivationPending(subscription);
 
   return <SubscriptionContext.Provider value={{ subscription, isLoading, isPro, isActivationPending, refreshSubscription }}>{children}</SubscriptionContext.Provider>;

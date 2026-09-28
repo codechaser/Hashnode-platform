@@ -11,6 +11,7 @@ const tagRoutes = require("./routes/tagRoutes");
 const userRoutes = require("./routes/userRoutes");
 const commentRoutes = require("./routes/commentRoutes");
 const billingRoutes = require("./routes/billingRoutes");
+const { publishDuePosts } = require("./controllers/creatorController");
 
 const app = express();
 
@@ -54,6 +55,8 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   await connectDB();
+  const publishingTimer = setInterval(() => publishDuePosts().catch((error) => console.error(`Scheduled publishing error: ${error.message}`)), 60_000);
+  publishingTimer.unref();
 
   return app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

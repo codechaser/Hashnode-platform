@@ -20,6 +20,7 @@
 }
 
 * { box-sizing: border-box; }
+html, body, #root { max-width: 100%; overflow-x: clip; }
 body { min-width: 320px; background: var(--paper); }
 button, input, textarea, select { font: inherit; }
 a { color: inherit; }
@@ -435,6 +436,34 @@ body, .app-shell { background: var(--paper); color: var(--ink); }
 .status-badge.draft { color: var(--warning-text); background: var(--warning-bg); }
 .skeleton-card { background: linear-gradient(90deg, var(--surface) 20%, var(--line) 40%, var(--surface) 60%); background-size: 300% 100%; }
 
+@media (max-width: 1800px) {
+  .menu-toggle { display: block; }
+  .site-nav {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: max(28px, calc((100vw - 1180px) / 2));
+    left: auto;
+    display: none;
+    width: min(420px, calc(100vw - 32px));
+    max-height: calc(100dvh - 100px);
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0;
+    overflow-y: auto;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  .site-nav.is-open { display: flex; }
+  .site-nav a, .nav-logout { padding: 12px 10px; text-align: left; }
+  .nav-more { width: 100%; padding: 12px 10px; text-align: left; }
+  .theme-toggle { align-self: flex-start; margin: 6px 10px; }
+  .nav-auth-links { align-items: stretch; flex-direction: column; gap: 4px; }
+  .nav-auth-links .button { text-align: center; }
+}
+
 @media (max-width: 760px) {
   .site-header { position: relative; width: 100%; margin: 0; padding: 0 16px; }
   .nav-inner, .page-wrap, .site-footer { width: min(100% - 32px, 1180px); }
@@ -477,6 +506,7 @@ body, .app-shell { background: var(--paper); color: var(--ink); }
   background: var(--accent) !important;
   border-color: var(--accent) !important;
 }
+
 
 .nav-auth-links .button-small:hover {
   color: #ffffff !important;

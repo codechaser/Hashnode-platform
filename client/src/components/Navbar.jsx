@@ -132,15 +132,17 @@ function Navbar() {
               <a className="more-item" href="https://darkshift.dev/" target="_blank" rel="noreferrer"><span className="more-item-icon" aria-hidden="true">▥</span><span><strong>Darkshift <em className="more-new-badge">New</em></strong><small>A dark factory for software.</small></span></a>
               <a className="more-item" href="https://bug0.com/" target="_blank" rel="noreferrer"><span className="more-item-icon" aria-hidden="true">✳</span><span><strong>Bug0</strong><small>The AI-native end-to-end QA regression testing platform.</small></span></a>
               <a className="more-item" href="https://hashnode.com/blog" target="_blank" rel="noreferrer"><span className="more-item-icon" aria-hidden="true">❋</span><span><strong>The foreword</strong><small>Official blog from the Hashnode team.</small></span></a>
-              <a className="more-item" href="https://github.com/bug0inc/passmark" target="_blank" rel="noreferrer"><span className="more-item-icon more-github-icon" aria-hidden="true">●</span><span><strong>Passmark</strong><small>The open-source AI framework for regression testing.</small></span></a>
+              <a className="more-item" href="https://go.bug0.com/passmark" target="_blank" rel="noreferrer"><span className="more-item-icon more-github-icon" aria-hidden="true">●</span><span><strong>Passmark</strong><small>The open-source AI framework for regression testing.</small></span></a>
               <a className="more-item" href="https://github.com/Hashnode/gql-skill" target="_blank" rel="noreferrer"><span className="more-item-icon more-github-icon" aria-hidden="true">●</span><span><strong>Hashnode gql skill</strong><small>Let your AI agent publish to your Hashnode blog.</small></span></a>
             </div>
           </section>
 
           <section className="more-group more-footer-links" aria-label="More links">
-            <a href="https://support.hashnode.com/" target="_blank" rel="noreferrer">♧ &nbsp;Support</a>
+            <a href="mailto:hello+support@hashnode.com">♧ &nbsp;Support</a>
             <a href="https://hashnode.com/changelog" target="_blank" rel="noreferrer">Changelog</a>
             <a href="https://hashnode.com/brand" target="_blank" rel="noreferrer">Brand</a>
+            <a href="https://hashnode.com/sitemap.xml" target="_blank" rel="noreferrer">Sitemap</a>
+            <a href="https://hashnode.com/code-of-conduct" target="_blank" rel="noreferrer">Code of Conduct</a>
             <Link to="/writers" onClick={closeMore}>Find writers</Link>
             <Link to="/" onClick={closeMore}>Explore feed</Link>
             <Link to="/pricing" onClick={closeMore}>{isPro ? "PRO plan" : "Explore PRO"}</Link>
@@ -150,7 +152,7 @@ function Navbar() {
             <a href="https://x.com/hashnode" target="_blank" rel="noreferrer" aria-label="Hashnode on X">𝕏</a>
             <a href="https://www.linkedin.com/company/hashnode/" target="_blank" rel="noreferrer" aria-label="Hashnode on LinkedIn">in</a>
             <a href="https://hashnode.com/terms" target="_blank" rel="noreferrer">Terms</a>
-            <a href="https://hashnode.com/privacy" target="_blank" rel="noreferrer">Privacy</a>
+            <a href="https://hashnode.com/privacy-policy" target="_blank" rel="noreferrer">Privacy</a>
             <a className="more-source-link" href="https://github.com/codechaser/Hashnode-platform" target="_blank" rel="noreferrer">Hashnode Lab source</a>
           </footer>
         </aside>

@@ -252,6 +252,8 @@ h2 { font-size: clamp(1.65rem, 3vw, 2.35rem); line-height: 1.1; letter-spacing: 
 .writers-header { max-width: 760px; margin-bottom: 40px; }
 .writers-header h1 { margin: 15px 0 13px; font-size: clamp(2.8rem, 7vw, 5rem); }
 .writers-header > p:not(.eyebrow) { max-width: 560px; color: var(--muted); font-size: 1.05rem; line-height: 1.7; }
+.writers-header .writers-auth-notice { margin: 16px 0 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: .79rem; }
+.writers-auth-notice a { color: var(--accent); font-weight: 800; }
 .writers-search { margin-top: 24px; }
 .writers-result-count { margin: 0 0 14px; color: var(--faint); font: .72rem var(--mono); }
 .writers-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }

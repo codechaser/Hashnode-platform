@@ -111,7 +111,7 @@ function ProfilePage() {
           </div>
         </div>
         <div className="profile-actions">
-          {!isOwnProfile && <button className="button button-primary" type="button" disabled={followLoading} onClick={toggleFollow}>{followLoading ? "Updating..." : followState.following ? "Unfollow" : "Follow"}</button>}
+          {!isOwnProfile && <button className="button button-primary" type="button" disabled={followLoading} onClick={toggleFollow}>{followLoading ? "Updating..." : !currentUser ? "Log in to follow" : followState.following ? "Unfollow" : "Follow"}</button>}
           <div className="profile-stats">
             <button type="button" onClick={() => openConnections("followers")}><strong>{followState.followers ?? user.followers ?? 0}</strong> Followers</button>
             <button type="button" onClick={() => openConnections("following")}><strong>{followState.followingCount ?? user.following ?? 0}</strong> Following</button>

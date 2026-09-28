@@ -72,6 +72,7 @@ function WritersPage() {
       <p className="eyebrow">MEET THE COMMUNITY</p>
       <h1>Find your people.</h1>
       <p>Discover writers, follow their work, and build your circle one connection at a time.</p>
+      {!user && <p className="writers-auth-notice">Log in or create an account to follow members. Search by public name or username; email addresses stay private. <Link to="/login" state={{ from: "/writers" }}>Log in</Link> · <Link to="/register">Join the community</Link></p>}
       <form className="search-form writers-search" onSubmit={handleSearch} role="search">
         <label className="sr-only" htmlFor="writer-search">Search members by name or username</label>
         <input id="writer-search" type="search" placeholder="Search by name or username..." value={searchInput} onChange={(event) => setSearchInput(event.target.value)} />
@@ -95,7 +96,7 @@ function WritersPage() {
           <div className="writer-card-footer">
             <span><strong>{member.followers}</strong> followers</span>
             <button className={`button ${member.following ? "button-secondary" : "button-primary"}`} type="button" disabled={loadingUserId === member.id} onClick={() => toggleFollow(member)}>
-              {loadingUserId === member.id ? "Updating..." : member.following ? "Following" : member.followsYou ? "Follow back" : "Follow"}
+              {loadingUserId === member.id ? "Updating..." : !user ? "Log in to follow" : member.following ? "Unfollow" : member.followsYou ? "Follow back" : "Follow"}
             </button>
           </div>
         </article>)}

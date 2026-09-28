@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Comment = require("../models/Comment");
 const Post = require("../models/Post");
+const { createNotification } = require("../services/notificationService");
 
 const MAX_COMMENT_LENGTH = 2000;
 
@@ -46,7 +47,7 @@ const getComments = async (req, res) => {
   }
 
   try {
-    const post = await Post.findOne({ _id: postId, status: "published" }).select("_id").lean();
+    const post = await Post.findOne({ _id: postId, status: "published" }).select("_id author").lean();
 
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
@@ -97,7 +98,7 @@ const createComment = async (req, res) => {
   }
 
   try {
-    const post = await Post.findOne({ _id: postId, status: "published" }).select("_id").lean();
+    const post = await Post.findOne({ _id: postId, status: "published" }).select("_id author").lean();
 
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
@@ -108,6 +109,8 @@ const createComment = async (req, res) => {
       author: req.user.id,
       content,
     });
+
+    await createNotification({ recipient: post.author, actor: req.user.id, type: "comment", post: post._id });
 
     const populated = await Comment.findById(comment._id)
       .populate("author", "name username avatarUrl")

@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Post = require("../models/Post");
 const Reaction = require("../models/Reaction");
 const Revision = require("../models/Revision");
+const Follow = require("../models/Follow");
 const { hasValidProSubscription } = require("../services/subscriptionService");
 const { trackPostView, publishDuePosts } = require("./creatorController");
 
@@ -105,6 +106,37 @@ const getPublicFeed = async (req, res) => {
   } catch (error) {
     console.error(`Public feed error: ${error.message}`);
     return res.status(500).json({ message: "Unable to fetch public feed" });
+  }
+};
+
+const getFollowingFeed = async (req, res) => {
+  try {
+    await publishDuePosts();
+    const { page, limit } = parsePagination(req.query);
+    const followedAuthors = await Follow.distinct("following", { follower: req.user.id });
+    if (!followedAuthors.length) {
+      return res.status(200).json({ posts: [], page, limit, total: 0, totalPages: 0, hasNextPage: false });
+    }
+
+    const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+    const query = { status: "published", author: { $in: followedAuthors } };
+    if (search) query.title = { $regex: escapeRegex(search), $options: "i" };
+    const tag = typeof req.query.tag === "string" ? req.query.tag.trim() : "";
+    if (tag) query.tags = { $regex: `^${escapeRegex(tag)}$`, $options: "i" };
+
+    const total = await Post.countDocuments(query);
+    const totalPages = Math.ceil(total / limit);
+    const posts = await Post.find(query)
+      .select(publicPostFields)
+      .populate("author", "name username avatarUrl")
+      .sort({ createdAt: -1, _id: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+    const postsWithCounts = await withReactionCounts(posts);
+    return res.status(200).json({ posts: postsWithCounts, page, limit, total, totalPages, hasNextPage: page < totalPages });
+  } catch (error) {
+    console.error(`Following feed error: ${error.message}`);
+    return res.status(500).json({ message: "Unable to fetch your following feed" });
   }
 };
 
@@ -287,6 +319,7 @@ const deletePost = async (req, res) => {
 
 module.exports = {
   getPublicFeed,
+  getFollowingFeed,
   getPublicPostBySlug,
   createPost,
   getPosts,

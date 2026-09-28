@@ -5,6 +5,7 @@ const optionalAuthMiddleware = require("../middleware/optionalAuthMiddleware");
 const { getReaction, addReaction, removeReaction } = require("../controllers/reactionController");
 const {
   getPublicFeed,
+  getFollowingFeed,
   getPublicPostBySlug,
   createPost,
   getPosts,
@@ -28,6 +29,7 @@ router.get("/:id/revisions", authMiddleware, requirePro, listRevisions);
 router.post("/:id/revisions/:revisionId/restore", authMiddleware, requirePro, restoreRevision);
 router.put("/:id/cover", authMiddleware, requirePro, setCoverImage);
 router.get("/feed", getPublicFeed);
+router.get("/feed/following", authMiddleware, getFollowingFeed);
 router.get("/:id/comments", getComments);
 router.post("/:id/comments", authMiddleware, createComment);
 router.get("/:id/reaction", optionalAuthMiddleware, getReaction);

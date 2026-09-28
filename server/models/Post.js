@@ -48,5 +48,6 @@ const postSchema = new mongoose.Schema(
 
 postSchema.index({ status: 1, scheduledAt: 1 });
 postSchema.index({ status: 1, createdAt: -1 });
+postSchema.index({ status: 1, author: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Post", postSchema);

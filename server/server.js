@@ -11,6 +11,7 @@ const tagRoutes = require("./routes/tagRoutes");
 const userRoutes = require("./routes/userRoutes");
 const commentRoutes = require("./routes/commentRoutes");
 const billingRoutes = require("./routes/billingRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 const { publishDuePosts } = require("./controllers/creatorController");
 
 const app = express();
@@ -43,6 +44,7 @@ app.use("/api/posts", postRoutes);
 app.use("/api/tags", tagRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/comments", commentRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/billing", billingRoutes);
 
 app.get("/", (req, res) => {

@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Post = require("../models/Post");
 const Reaction = require("../models/Reaction");
+const { createNotification } = require("../services/notificationService");
 
 const isValidPostId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -9,7 +10,7 @@ const findPublishedPost = async (id) => {
     return { invalid: true };
   }
 
-  const post = await Post.findOne({ _id: id, status: "published" }).select("_id").lean();
+  const post = await Post.findOne({ _id: id, status: "published" }).select("_id author").lean();
   return { post };
 };
 
@@ -53,12 +54,18 @@ const addReaction = async (req, res) => {
       return res.status(404).json({ message: "Post not found" });
     }
 
+    let created = false;
     try {
       await Reaction.create({ user: req.user.id, post: req.params.id });
+      created = true;
     } catch (error) {
       if (error.code !== 11000) {
         throw error;
       }
+    }
+
+    if (created) {
+      await createNotification({ recipient: result.post.author, actor: req.user.id, type: "reaction", post: result.post._id });
     }
 
     return res.status(200).json(await getReactionState(req.params.id, req.user.id));

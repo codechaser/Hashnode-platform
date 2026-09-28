@@ -1,18 +1,43 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
 import { useSubscription } from "../context/SubscriptionContext.jsx";
+import api from "../services/api.js";
 
 function Navbar() {
   const { user, logout } = useAuth();
   const { preference, resolvedTheme, setPreference } = useTheme();
   const { isPro, isActivationPending } = useSubscription();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const profilePath = user?.username ? `/profile/${user.username}` : "/settings";
   const closeMenu = () => setMenuOpen(false);
   const nextPreference = preference === "system" ? "light" : preference === "light" ? "dark" : "system";
   const themeLabel = preference === "system" ? `Theme: System (${resolvedTheme})` : `Theme: ${preference}`;
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadNotifications(0);
+      return undefined;
+    }
+
+    let active = true;
+    const loadUnreadCount = async () => {
+      try {
+        const response = await api.get("/api/notifications", { params: { page: 1, limit: 1 } });
+        if (active) setUnreadNotifications(response.data.unreadCount || 0);
+      } catch {
+        // Keep navigation usable when notifications are temporarily unavailable.
+      }
+    };
+    loadUnreadCount();
+    const timer = window.setInterval(loadUnreadCount, 60_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [user?.id]);
 
   return (
     <header className="site-header">
@@ -31,6 +56,7 @@ function Navbar() {
           {user && isActivationPending && <span className="activation-badge" role="status">Activating PRO…</span>}
           {user && <NavLink className="nav-create" to="/editor" onClick={closeMenu}>Write</NavLink>}
           {user && <NavLink to="/dashboard" onClick={closeMenu}>Dashboard</NavLink>}
+          {user && <NavLink className="nav-notifications" to="/notifications" onClick={closeMenu}>Notifications{unreadNotifications > 0 && <span className="notification-count" aria-label={`${unreadNotifications} unread`}>{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</NavLink>}
           {user && <NavLink to={profilePath} onClick={closeMenu}>Profile</NavLink>}
           {user && <NavLink to="/settings" onClick={closeMenu}>Settings</NavLink>}
           {user && <NavLink to="/bookmarks" onClick={closeMenu}>Bookmarks</NavLink>}

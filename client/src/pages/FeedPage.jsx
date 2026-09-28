@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import ArticleCard from "../components/ArticleCard.jsx";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../components/FeedbackStates.jsx";
 import api from "../services/api.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 function FeedPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [tags, setTags] = useState([]);
   const [trendingTags, setTrendingTags] = useState([]);
@@ -18,6 +21,7 @@ function FeedPage() {
   const [error, setError] = useState("");
   const search = searchParams.get("search") || "";
   const selectedTag = searchParams.get("tag") || "";
+  const feedMode = searchParams.get("feed") === "following" ? "following" : "latest";
 
   async function loadFeed(nextPage = 1, append = false) {
     if (append) {
@@ -29,7 +33,7 @@ function FeedPage() {
 
     try {
       const [feedResult, tagResult, trendingResult, writersResult] = await Promise.allSettled([
-        api.get("/api/posts/feed", { params: { search, tag: selectedTag, page: nextPage, limit: 10 } }),
+        api.get(feedMode === "following" ? "/api/posts/feed/following" : "/api/posts/feed", { params: { search, tag: selectedTag, page: nextPage, limit: 10 } }),
         api.get("/api/tags"),
         api.get("/api/tags/trending"),
         api.get("/api/users/discover"),
@@ -57,13 +61,14 @@ function FeedPage() {
 
   useEffect(() => {
     loadFeed(1, false);
-  }, [search, selectedTag]);
+  }, [search, selectedTag, feedMode]);
 
   function handleSearch(event) {
     event.preventDefault();
     const next = {};
     if (searchInput.trim()) next.search = searchInput.trim();
     if (selectedTag) next.tag = selectedTag;
+    if (feedMode === "following") next.feed = feedMode;
     setSearchParams(next);
   }
 
@@ -71,6 +76,19 @@ function FeedPage() {
     const next = {};
     if (search) next.search = search;
     if (tag) next.tag = tag;
+    if (feedMode === "following") next.feed = feedMode;
+    setSearchParams(next);
+  }
+
+  function selectFeedMode(mode) {
+    if (mode === "following" && !user) {
+      navigate("/login", { state: { from: "/?feed=following" } });
+      return;
+    }
+    const next = {};
+    if (search) next.search = search;
+    if (selectedTag) next.tag = selectedTag;
+    if (mode === "following") next.feed = mode;
     setSearchParams(next);
   }
 
@@ -113,8 +131,12 @@ function FeedPage() {
 
       <section className="feed-toolbar" aria-label="Explore articles">
         <div>
-          <p className="section-label">LATEST FROM THE COMMUNITY</p>
+          <p className="section-label">{feedMode === "following" ? "YOUR READING CIRCLE" : "LATEST FROM THE COMMUNITY"}</p>
           <h2>Explore ideas</h2>
+          <div className="feed-mode-tabs" role="tablist" aria-label="Choose article feed">
+            <button type="button" role="tab" aria-selected={feedMode === "latest"} className={feedMode === "latest" ? "active" : ""} onClick={() => selectFeedMode("latest")}>Everyone</button>
+            <button type="button" role="tab" aria-selected={feedMode === "following"} className={feedMode === "following" ? "active" : ""} onClick={() => selectFeedMode("following")}>Following</button>
+          </div>
         </div>
         <form className="search-form" onSubmit={handleSearch} role="search">
           <label className="sr-only" htmlFor="feed-search">Search article titles</label>
@@ -130,7 +152,7 @@ function FeedPage() {
 
       {loading && <LoadingSkeleton />}
       {!loading && error && <ErrorState message={error} onRetry={loadFeed} />}
-      {!loading && !error && posts.length === 0 && <EmptyState title="No articles found" message="Try another title or topic, or be the first person to publish an idea here." action={<Link className="button button-secondary" to="/editor">Write an article</Link>} />}
+      {!loading && !error && posts.length === 0 && <EmptyState title={feedMode === "following" ? "Your feed is ready to grow" : "No articles found"} message={feedMode === "following" ? "Follow a few writers to see their new articles here." : "Try another title or topic, or be the first person to publish an idea here."} action={feedMode === "following" ? <Link className="button button-secondary" to="/writers">Find writers to follow</Link> : <Link className="button button-secondary" to="/editor">Write an article</Link>} />}
       {!loading && !error && posts.length > 0 && <>
         <section className="article-grid" aria-label="Published articles">{posts.map((post, index) => <ArticleCard key={post._id || post.slug} post={post} featured={index === 0} />)}</section>
         {hasNextPage && <div className="load-more-wrap"><button className="button button-secondary" type="button" onClick={loadMore} disabled={loadingMore}>{loadingMore ? "Loading more..." : "Load more articles"}</button></div>}

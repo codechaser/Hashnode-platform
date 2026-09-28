@@ -8,6 +8,7 @@ const Follow = require("../models/Follow");
 const Subscription = require("../models/Subscription");
 const Revision = require("../models/Revision");
 const PostView = require("../models/PostView");
+const Notification = require("../models/Notification");
 
 const json = (value) => JSON.stringify(value);
 
@@ -123,6 +124,7 @@ async function clearCollections() {
     Subscription.deleteMany({}),
     Revision.deleteMany({}),
     PostView.deleteMany({}),
+    Notification.deleteMany({}),
   ]);
 }
 

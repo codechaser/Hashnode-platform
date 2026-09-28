@@ -1,5 +1,6 @@
 const Follow = require("../models/Follow");
 const User = require("../models/User");
+const { createNotification } = require("../services/notificationService");
 
 const safeUserFields = "name username bio avatarUrl";
 const usernamePattern = /^[a-z0-9_][a-z0-9_-]{2,29}$/i;
@@ -57,12 +58,18 @@ const addFollow = async (req, res) => {
       return res.status(400).json({ message: "You cannot follow yourself" });
     }
 
+    let created = false;
     try {
       await Follow.create({ follower: req.user.id, following: target._id });
+      created = true;
     } catch (error) {
       if (error.code !== 11000) {
         throw error;
       }
+    }
+
+    if (created) {
+      await createNotification({ recipient: target._id, actor: req.user.id, type: "follow" });
     }
 
     return res.status(201).json({

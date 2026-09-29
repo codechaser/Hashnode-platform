@@ -368,7 +368,9 @@ h2 { font-size: clamp(1.65rem, 3vw, 2.35rem); line-height: 1.1; letter-spacing: 
 .pricing-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; max-width: 920px; }
 .pricing-card { position: relative; min-height: 390px; padding: 30px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
 .pricing-card.current { border-color: var(--accent); box-shadow: 0 12px 35px rgba(224,82,63,.1); }
-.pricing-card-pro { background: linear-gradient(145deg, var(--surface), #fff4ed); }
+.pricing-card-pro { background: linear-gradient(145deg, var(--surface), color-mix(in srgb, var(--surface) 74%, var(--accent-soft))); }
+.pricing-card-pro h2, .pricing-card-pro .price strong { color: var(--ink); }
+.pricing-card-pro .section-label, .pricing-card-pro .price, .pricing-card-pro .pricing-copy, .pricing-card-pro .pricing-benefits, .pricing-card-pro .billing-message { color: var(--muted); }
 .pricing-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .current-plan, .pro-badge { color: var(--accent-dark); background: var(--accent-soft); border-radius: 999px; padding: 5px 8px; font: 700 .62rem var(--mono); letter-spacing: .06em; }
 .pricing-card h2 { margin: 36px 0 12px; font-size: 2.3rem; }

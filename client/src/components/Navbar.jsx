@@ -101,7 +101,6 @@ function Navbar() {
           {user && <NavLink className="nav-visible" to="/editor" onClick={closeMenu}>Write</NavLink>}
           {user && <NavLink className="nav-secondary" to="/dashboard" onClick={closeMenu}>Dashboard</NavLink>}
           {user && <NavLink className="nav-visible nav-notifications" to="/notifications" onClick={closeMenu}>Notifications{unreadNotifications > 0 && <span className="notification-count" aria-label={`${unreadNotifications} unread`}>{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</NavLink>}
-          {user && <NavLink className="nav-avatar" to={profilePath} onClick={closeMenu} aria-label={`Your profile, ${user.name || user.username}`} title="Your profile">{user.avatarUrl ? <img src={user.avatarUrl} alt="" /> : <span>{(user.name || user.username || "U").charAt(0).toUpperCase()}</span>}</NavLink>}
           {user && <NavLink className="nav-secondary" to="/settings" onClick={closeMenu}>Settings</NavLink>}
           {user && <NavLink className="nav-secondary" to="/bookmarks" onClick={closeMenu}>Bookmarks</NavLink>}
           <button ref={moreTriggerRef} className={`nav-more ${moreOpen ? "active" : ""}`} type="button" aria-haspopup="dialog" aria-expanded={moreOpen} aria-controls="more-panel" onClick={openMore}>More <span aria-hidden="true">•••</span></button>
@@ -118,6 +117,7 @@ function Navbar() {
           {user ? <button className="nav-logout" type="button" onClick={() => { logout(); closeMenu(); }}>Log out</button> : (
             <div className="nav-auth-links"><NavLink to="/login" onClick={closeMenu}>Log in</NavLink><NavLink className="button button-small" to="/register" onClick={closeMenu}>Get started</NavLink></div>
           )}
+          {user && <NavLink className="nav-avatar" to={profilePath} onClick={closeMenu} aria-label={`Your profile, ${user.name || user.username}`} title="Your profile">{user.avatarUrl ? <img src={user.avatarUrl} alt="" /> : <span>{(user.name || user.username || "U").charAt(0).toUpperCase()}</span>}</NavLink>}
         </nav>
       </div>
       {moreOpen && createPortal(<div className="more-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeMore(); }}>

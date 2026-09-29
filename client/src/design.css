@@ -42,7 +42,7 @@ h2 { font-size: clamp(1.65rem, 3vw, 2.35rem); line-height: 1.1; letter-spacing: 
 .nav-more { display: inline-flex; align-items: center; gap: 7px; border: 0; padding: 0; color: var(--muted); background: transparent; font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
 .nav-more:hover, .nav-more.active { color: var(--ink); }
 .nav-more span { color: var(--faint); font-size: .9rem; letter-spacing: .02em; }
-.nav-avatar { display: inline-grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; overflow: hidden; border: 1px solid var(--line); border-radius: 50%; color: var(--ink) !important; background: var(--surface); font-size: .8rem !important; letter-spacing: 0 !important; text-decoration: none; }
+.site-nav .nav-avatar { display: inline-flex; width: 34px; height: 34px; flex: 0 0 34px; align-items: center; justify-content: center; margin: 0; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 50%; color: var(--ink) !important; background: var(--surface); font-size: .8rem !important; line-height: 1; letter-spacing: 0 !important; text-decoration: none; }
 .nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .nav-avatar span { font-weight: 800; }
 .more-backdrop { position: fixed; inset: 0; z-index: 30; display: flex; justify-content: center; align-items: flex-start; overflow-y: auto; padding: clamp(24px, 23vh, 220px) 16px 24px; background: rgba(0, 0, 0, .18); }
@@ -574,7 +574,7 @@ body, .app-shell { background: var(--paper); color: var(--ink); }
   .site-nav a.nav-primary { padding: 0; white-space: nowrap; }
   .site-nav a.nav-visible { padding: 0; white-space: nowrap; }
   .site-nav .nav-more { width: auto; padding: 0; white-space: nowrap; }
-  .site-nav .theme-toggle { flex: 0 0 auto; margin: 0; white-space: nowrap; }
+  .site-nav .theme-toggle { display: inline-flex; align-items: center; justify-content: center; align-self: center; flex: 0 0 auto; margin: 0; white-space: nowrap; }
   .site-nav .nav-logout { padding: 0; white-space: nowrap; }
   .site-nav .nav-auth-links { align-items: center; flex: 0 0 auto; flex-direction: row; gap: 10px; }
   .site-nav .nav-auth-links a { padding: 0; white-space: nowrap; }

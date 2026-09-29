@@ -353,7 +353,7 @@ main {
 
 .profile-card,
 .profile-posts {
-  background: var(--bg);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px;
   box-shadow: var(--shadow);
@@ -600,4 +600,3 @@ main {
     font-size: 34px;
   }
 }
-

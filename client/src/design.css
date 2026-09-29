@@ -354,9 +354,10 @@ h2 { font-size: clamp(1.65rem, 3vw, 2.35rem); line-height: 1.1; letter-spacing: 
 .profile-hero h1 { margin: 7px 0; font-size: 3rem; }
 .profile-username { color: var(--accent); font: .8rem var(--mono); }
 .profile-bio { max-width: 600px; margin-top: 10px; }
-.profile-posts { margin-top: 48px; }
+.profile-posts { margin-top: 48px; background: var(--surface); }
+.profile-posts .article-card { background: color-mix(in srgb, var(--paper) 40%, var(--surface)); }
 .profile-posts-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-.post-count { color: var(--accent); font: .8rem var(--mono); }
+.post-count { color: var(--accent); background: var(--accent-soft); font: .8rem var(--mono); }
 .form-message { margin-bottom: 18px; padding: 11px 13px; border-radius: 7px; font-size: .82rem; }
 .form-message.error { color: #8e3027; border: 1px solid #f0c9c3; background: #fff3f0; }
 .form-message.success { color: #227248; border: 1px solid #bce3cc; background: #f0fbf4; }

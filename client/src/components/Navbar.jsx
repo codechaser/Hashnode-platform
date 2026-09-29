@@ -97,13 +97,13 @@ function Navbar() {
           <NavLink className="nav-primary" to="/pricing" onClick={closeMenu}>{user && !isPro ? "Upgrade" : "Pricing"}</NavLink>
           <NavLink className="nav-primary" to="/search" onClick={closeMenu}>Search</NavLink>
           {user && isPro && <span className="pro-badge">PRO</span>}
-          {user && isActivationPending && <span className="activation-badge" role="status">Activating PRO…</span>}
           {user && <NavLink className="nav-visible" to="/editor" onClick={closeMenu}>Write</NavLink>}
           {user && <NavLink className="nav-secondary" to="/dashboard" onClick={closeMenu}>Dashboard</NavLink>}
           {user && <NavLink className="nav-visible nav-notifications" to="/notifications" onClick={closeMenu}>Notifications{unreadNotifications > 0 && <span className="notification-count" aria-label={`${unreadNotifications} unread`}>{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</NavLink>}
           {user && <NavLink className="nav-secondary" to="/settings" onClick={closeMenu}>Settings</NavLink>}
           {user && <NavLink className="nav-secondary" to="/bookmarks" onClick={closeMenu}>Bookmarks</NavLink>}
           <button ref={moreTriggerRef} className={`nav-more ${moreOpen ? "active" : ""}`} type="button" aria-haspopup="dialog" aria-expanded={moreOpen} aria-controls="more-panel" onClick={openMore}>More <span aria-hidden="true">•••</span></button>
+          {user && isActivationPending && <span className="activation-badge" role="status">Activating PRO…</span>}
           <button
             className="theme-toggle"
             type="button"

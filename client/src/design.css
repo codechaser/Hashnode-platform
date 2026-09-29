@@ -94,7 +94,7 @@ h2 { font-size: clamp(1.65rem, 3vw, 2.35rem); line-height: 1.1; letter-spacing: 
 .search-topic:hover { border-color: var(--accent); color: var(--accent); }
 .search-writer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .search-writer-card { display: flex; min-width: 0; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: var(--radius); padding: 15px; background: var(--surface); text-decoration: none; }
-.search-writer-card > img, .search-writer-avatar { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; border-radius: 50%; color: var(--ink); background: var(--paper); object-fit: cover; }
+.search-writer-card > .search-writer-avatar-image, .search-writer-avatar { display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; border-radius: 50%; color: var(--ink); background: var(--paper); object-fit: cover; }
 .search-writer-card > span:nth-child(2) { display: grid; min-width: 0; flex: 1; gap: 3px; }
 .search-writer-card strong { color: var(--ink); font-size: .9rem; }
 .search-writer-card small { overflow: hidden; color: var(--muted); font-size: .72rem; text-overflow: ellipsis; white-space: nowrap; }
@@ -153,7 +153,7 @@ h2 { font-size: clamp(1.65rem, 3vw, 2.35rem); line-height: 1.1; letter-spacing: 
 .discovery-writer-card { display: flex; min-width: 0; align-items: center; gap: 10px; border-top: 1px solid var(--line); }
 .discovery-writer-card:first-child { border-top: 0; }
 .discovery-writer { display: flex; min-width: 0; flex: 1 1 auto; align-items: center; gap: 11px; padding: 8px 0; color: inherit; text-decoration: none; }
-.discovery-writer img, .discovery-avatar { display: grid; width: 39px; height: 39px; flex: 0 0 39px; place-items: center; border-radius: 50%; object-fit: cover; color: var(--accent-dark); background: var(--accent-soft); font-weight: 800; }
+.discovery-writer img, .discovery-writer-avatar, .discovery-avatar { display: grid; width: 39px; height: 39px; flex: 0 0 39px; place-items: center; border-radius: 50%; object-fit: cover; color: var(--accent-dark); background: var(--accent-soft); font-weight: 800; }
 .discovery-writer-copy { display: grid; min-width: 0; gap: 3px; }
 .discovery-writer-copy strong { overflow: hidden; color: var(--ink); font-size: .79rem; text-overflow: ellipsis; white-space: nowrap; }
 .discovery-writer-copy small { overflow: hidden; color: var(--muted); font-size: .66rem; text-overflow: ellipsis; white-space: nowrap; }

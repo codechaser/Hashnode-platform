@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../components/FeedbackStates.jsx";
+import ProfileAvatar from "../components/ProfileAvatar.jsx";
 import api from "../services/api.js";
 
 function WritersPage() {
@@ -88,7 +89,7 @@ function WritersPage() {
       <section className="writers-grid" aria-label="Community members">
         {members.map((member) => <article className="writer-card" key={member.id}>
           <Link className="writer-card-profile" to={`/profile/${member.username}`}>
-            {member.avatarUrl ? <img className="writer-card-avatar" src={member.avatarUrl} alt="" /> : <span className="writer-card-avatar writer-card-avatar-fallback" aria-hidden="true">{member.name?.slice(0, 1)?.toUpperCase()}</span>}
+            <ProfileAvatar src={member.avatarUrl} name={member.name} fallbackName={member.username} imageClassName="writer-card-avatar" fallbackClassName="writer-card-avatar writer-card-avatar-fallback" />
             <span className="writer-card-identity"><strong>{member.name}</strong><small>@{member.username}</small></span>
           </Link>
           <p className="writer-card-bio">{member.bio || "Developer and community member."}</p>

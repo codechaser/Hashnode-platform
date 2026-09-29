@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import ProfileAvatar from "./ProfileAvatar.jsx";
 import TagBadge from "./TagBadge.jsx";
 
 const formatDate = (value) => value ? new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "Recently";
@@ -22,7 +23,7 @@ function ArticleCard({ post, featured = false }) {
       <p className="article-excerpt">{post.excerpt || "A thoughtful piece from the Hashnode community."}</p>
       <div className="article-tags">{(post.tags || []).slice(0, 4).map((tag) => <TagBadge key={tag}>{tag}</TagBadge>)}</div>
       <footer className="article-card-footer">
-        <span className="author-chip">{author?.avatarUrl ? <img src={author.avatarUrl} alt="" /> : <span className="avatar avatar-small">{authorName.charAt(0).toUpperCase()}</span>}<span>{authorName}</span></span>
+        <span className="author-chip"><ProfileAvatar src={author?.avatarUrl} name={authorName} imageClassName="author-avatar" fallbackClassName="avatar avatar-small" /><span>{authorName}</span></span>
         <time dateTime={post.createdAt}>{formatDate(post.createdAt)}</time>
       </footer>
     </article>

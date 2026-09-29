@@ -7,6 +7,7 @@ import { ErrorState, LoadingSkeleton } from "../components/FeedbackStates.jsx";
 import MarkdownRenderer from "../components/MarkdownRenderer.jsx";
 import TagBadge from "../components/TagBadge.jsx";
 import BookmarkButton from "../components/BookmarkButton.jsx";
+import ProfileAvatar from "../components/ProfileAvatar.jsx";
 import api from "../services/api.js";
 
 function PostDetailPage() {
@@ -181,7 +182,7 @@ function PostDetailPage() {
           <div className="article-tags">{(post.tags || []).map((tag) => <TagBadge key={tag}>{tag}</TagBadge>)}</div>
           <h1>{post.title}</h1>
           <p className="article-lede">{post.excerpt || "A practical note from the Hashnode community."}</p>
-          <div className="article-author-row">{author?.avatarUrl ? <img className="avatar article-author-avatar" src={author.avatarUrl} alt="" /> : <span className="avatar">{authorName.charAt(0).toUpperCase()}</span>}<div>{author?.username ? <Link className="article-author-link" to={`/profile/${encodeURIComponent(author.username)}`}><strong>{authorName}</strong></Link> : <strong>{authorName}</strong>}<span>{formatDate(post.createdAt)} <span aria-hidden="true">·</span> {getReadingTime(post.content)}</span></div>{author?.username && user?.username !== author.username && <button type="button" className="button button-secondary article-follow-button" disabled={followLoading} onClick={toggleFollow}>{followLoading ? "Saving…" : followState.following ? "Following" : "Follow"}</button>}</div>
+          <div className="article-author-row"><ProfileAvatar src={author?.avatarUrl} name={authorName} imageClassName="avatar article-author-avatar" fallbackClassName="avatar" /><div>{author?.username ? <Link className="article-author-link" to={`/profile/${encodeURIComponent(author.username)}`}><strong>{authorName}</strong></Link> : <strong>{authorName}</strong>}<span>{formatDate(post.createdAt)} <span aria-hidden="true">·</span> {getReadingTime(post.content)}</span></div>{author?.username && user?.username !== author.username && <button type="button" className="button button-secondary article-follow-button" disabled={followLoading} onClick={toggleFollow}>{followLoading ? "Saving…" : followState.following ? "Following" : "Follow"}</button>}</div>
           {followError && <p className="form-message error" role="alert">{followError}</p>}
         </header>
         <div className="article-body"><MarkdownRenderer content={post.content} /></div>

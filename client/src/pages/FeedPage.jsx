@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import ArticleCard from "../components/ArticleCard.jsx";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../components/FeedbackStates.jsx";
+import ProfileAvatar from "../components/ProfileAvatar.jsx";
 import api from "../services/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -148,7 +149,7 @@ function FeedPage() {
           <div className="discovery-heading"><div><p className="section-label">ACTIVE IN THE LAST 90 DAYS</p><h2>Writers to follow</h2></div><span aria-hidden="true">✳</span></div>
           <div className="discovery-writers">{suggestedWriters.map((writer) => <article className="discovery-writer-card" key={writer.id}>
             <Link className="discovery-writer" to={`/profile/${writer.username}`}>
-              {writer.avatarUrl ? <img src={writer.avatarUrl} alt="" /> : <span className="discovery-avatar" aria-hidden="true">{writer.name?.slice(0, 1)?.toUpperCase()}</span>}
+              <ProfileAvatar src={writer.avatarUrl} name={writer.name} fallbackName={writer.username} imageClassName="discovery-writer-avatar" fallbackClassName="discovery-avatar" />
               <span className="discovery-writer-copy"><strong>{writer.name}</strong><small>@{writer.username} · {writer.articleCount} recent {writer.articleCount === 1 ? "article" : "articles"}</small>{writer.bio && <small className="discovery-bio">{writer.bio}</small>}</span>
             </Link>
             <button className="discovery-follow" type="button" disabled={followWriterLoading === writer.id || followingWriterIds.has(writer.id)} onClick={() => followSuggestedWriter(writer)}>{followWriterLoading === writer.id ? "Following…" : followingWriterIds.has(writer.id) ? "Following" : user ? "Follow" : "Log in to follow"}</button>

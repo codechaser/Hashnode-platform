@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import ArticleCard from "../components/ArticleCard.jsx";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../components/FeedbackStates.jsx";
+import ProfileAvatar from "../components/ProfileAvatar.jsx";
 import api from "../services/api.js";
 
 function SearchPage() {
@@ -79,7 +80,7 @@ function SearchPage() {
     {query && !loading && errors.length < 3 && <>
       <p className="search-result-summary">Results for <strong>“{query}”</strong> · {resultTotals.articles} {resultTotals.articles === 1 ? "article" : "articles"}, {resultTotals.writers} {resultTotals.writers === 1 ? "writer" : "writers"}, {resultTotals.topics} {resultTotals.topics === 1 ? "topic" : "topics"}</p>
       {topics.length > 0 && <section className="search-results-section"><div className="section-heading"><p className="section-label">TOPICS</p><h2>Popular topics</h2></div><div className="search-topic-list">{topics.map((topic) => <Link className="search-topic" key={topic._id || topic.slug} to={`/?tag=${encodeURIComponent(topic.name)}`}>#{topic.name}</Link>)}</div></section>}
-      {writers.length > 0 && <section className="search-results-section"><div className="section-heading"><p className="section-label">COMMUNITY</p><h2>Writers</h2></div><div className="search-writer-grid">{writers.map((writer) => <Link className="search-writer-card" key={writer.id} to={`/profile/${encodeURIComponent(writer.username)}`}>{writer.avatarUrl ? <img src={writer.avatarUrl} alt="" /> : <span className="search-writer-avatar" aria-hidden="true">{(writer.name || writer.username || "W").charAt(0).toUpperCase()}</span>}<span><strong>{writer.name}</strong><small>@{writer.username}</small>{writer.bio && <small className="search-writer-bio">{writer.bio}</small>}</span><span aria-hidden="true">↗</span></Link>)}</div></section>}
+      {writers.length > 0 && <section className="search-results-section"><div className="section-heading"><p className="section-label">COMMUNITY</p><h2>Writers</h2></div><div className="search-writer-grid">{writers.map((writer) => <Link className="search-writer-card" key={writer.id} to={`/profile/${encodeURIComponent(writer.username)}`}><ProfileAvatar src={writer.avatarUrl} name={writer.name} fallbackName={writer.username} imageClassName="search-writer-avatar-image" fallbackClassName="search-writer-avatar" /><span><strong>{writer.name}</strong><small>@{writer.username}</small>{writer.bio && <small className="search-writer-bio">{writer.bio}</small>}</span><span aria-hidden="true">↗</span></Link>)}</div></section>}
       {articles.length > 0 && <section className="search-results-section"><div className="section-heading"><p className="section-label">PUBLISHED WRITING</p><h2>Articles</h2></div><div className="article-grid">{articles.map((post) => <ArticleCard key={post._id || post.slug} post={post} />)}</div></section>}
       {!hasResults && errors.length === 0 && <EmptyState title="No matches yet" message="Try a broader title, writer name, username, or topic." />}
     </>}

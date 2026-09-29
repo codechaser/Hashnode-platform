@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../components/FeedbackStates.jsx";
+import ProfileAvatar from "../components/ProfileAvatar.jsx";
 import api from "../services/api.js";
 
 const describeNotification = (item) => {
@@ -92,7 +93,7 @@ function NotificationsPage() {
     {!loading && !error && notifications.length > 0 && <>
       <section className="notification-list" aria-label="Your notifications">
         {notifications.map((item) => <button className={`notification-item ${item.readAt ? "is-read" : "is-unread"}`} type="button" key={item.id} disabled={saving} onClick={() => markRead(item)}>
-          {item.actor?.avatarUrl ? <img className="notification-avatar" src={item.actor.avatarUrl} alt="" /> : <span className="notification-avatar notification-avatar-fallback" aria-hidden="true">{item.actor?.name?.slice(0, 1)?.toUpperCase() || "H"}</span>}
+          <ProfileAvatar src={item.actor?.avatarUrl} name={item.actor?.name} fallbackName="H" imageClassName="notification-avatar" fallbackClassName="notification-avatar notification-avatar-fallback" />
           <span className="notification-copy"><strong>{describeNotification(item)}</strong>{item.post?.title && <span className="notification-post-title">{item.post.title}</span>}<time dateTime={item.createdAt}>{timeLabel(item.createdAt)}</time></span>
           {!item.readAt && <span className="notification-unread-dot" aria-label="Unread" />}
         </button>)}

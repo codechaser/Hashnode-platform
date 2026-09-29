@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
 import ArticleCard from "../../components/ArticleCard.jsx";
 import { EmptyState, ErrorState, LoadingSkeleton } from "../../components/FeedbackStates.jsx";
+import ProfileAvatar from "../../components/ProfileAvatar.jsx";
 import api from "../../services/api.js";
 
 function ProfilePage() {
@@ -100,7 +101,7 @@ function ProfilePage() {
     <div className="page-wrap profile-page">
       <section className="profile-hero">
         <div className="profile-heading">
-          {user.avatarUrl ? <img className="profile-avatar" src={user.avatarUrl} alt={`${user.name} avatar`} /> : <span className="avatar">{user.name?.[0] || "U"}</span>}
+          <ProfileAvatar src={user.avatarUrl} name={user.name} fallbackName={user.username} imageClassName="profile-avatar" fallbackClassName="avatar" alt={`${user.name} avatar`} />
           <div>
             <p className="eyebrow">PUBLIC PROFILE</p>
             <h1>{user.name}</h1>

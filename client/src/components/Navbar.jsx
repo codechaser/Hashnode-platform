@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
 import { useSubscription } from "../context/SubscriptionContext.jsx";
+import ProfileAvatar from "./ProfileAvatar.jsx";
 import api from "../services/api.js";
 
 function Navbar() {
@@ -13,28 +14,13 @@ function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [failedAvatarUrl, setFailedAvatarUrl] = useState("");
   const moreTriggerRef = useRef(null);
   const moreCloseRef = useRef(null);
   const morePanelRef = useRef(null);
   const profilePath = user?.username ? `/profile/${user.username}` : "/settings";
-  const avatarUrl = typeof user?.avatarUrl === "string" ? user.avatarUrl.trim() : "";
-  let usableAvatarUrl = "";
-  if (avatarUrl) {
-    try {
-      const parsedAvatarUrl = new URL(avatarUrl);
-      if (parsedAvatarUrl.protocol === "http:" || parsedAvatarUrl.protocol === "https:") usableAvatarUrl = avatarUrl;
-    } catch {
-      // Invalid or relative avatar URLs fall back to the user's initial.
-    }
-  }
-  const avatarInitial = (user?.name || user?.username || "U").charAt(0).toUpperCase();
   const closeMenu = () => setMenuOpen(false);
   const nextPreference = preference === "system" ? "light" : preference === "light" ? "dark" : "system";
   const themeLabel = preference === "system" ? `Theme: System (${resolvedTheme})` : `Theme: ${preference}`;
-  useEffect(() => {
-    setFailedAvatarUrl("");
-  }, [user?.id, avatarUrl]);
 
   const closeMore = () => {
     setMoreOpen(false);
@@ -133,7 +119,7 @@ function Navbar() {
           {user ? <button className="nav-logout" type="button" onClick={() => { logout(); closeMenu(); }}>Log out</button> : (
             <div className="nav-auth-links"><NavLink to="/login" onClick={closeMenu}>Log in</NavLink><NavLink className="button button-small" to="/register" onClick={closeMenu}>Get started</NavLink></div>
           )}
-          {user && <NavLink className="nav-avatar" to={profilePath} onClick={closeMenu} aria-label={`Your profile, ${user.name || user.username}`} title="Your profile">{usableAvatarUrl && failedAvatarUrl !== usableAvatarUrl ? <img src={usableAvatarUrl} alt="" onError={() => setFailedAvatarUrl(usableAvatarUrl)} /> : <span>{avatarInitial}</span>}</NavLink>}
+          {user && <NavLink className="nav-avatar" to={profilePath} onClick={closeMenu} aria-label={`Your profile, ${user.name || user.username}`} title="Your profile"><ProfileAvatar src={user.avatarUrl} name={user.name} fallbackName={user.username} imageClassName="nav-avatar-image" fallbackClassName="nav-avatar-initial" /></NavLink>}
         </nav>
       </div>
       {moreOpen && createPortal(<div className="more-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeMore(); }}>

@@ -13,10 +13,12 @@ function Navbar() {
   const { isPro, isActivationPending } = useSubscription();
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [morePosition, setMorePosition] = useState({ top: 16, right: 16 });
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const moreTriggerRef = useRef(null);
   const moreCloseRef = useRef(null);
   const morePanelRef = useRef(null);
+  const headerRef = useRef(null);
   const profilePath = user?.username ? `/profile/${user.username}` : "/settings";
   const closeMenu = () => setMenuOpen(false);
   const nextPreference = preference === "system" ? "light" : preference === "light" ? "dark" : "system";
@@ -27,6 +29,15 @@ function Navbar() {
     moreTriggerRef.current?.focus();
   };
   const openMore = () => {
+    const trigger = moreTriggerRef.current?.getBoundingClientRect();
+    if (trigger && window.innerWidth > 760) {
+      setMorePosition({
+        top: Math.max(12, Math.min(trigger.bottom + 10, window.innerHeight - 120)),
+        right: Math.max(12, document.documentElement.clientWidth - trigger.right),
+      });
+    } else {
+      setMorePosition({ top: 12, right: 12 });
+    }
     setMenuOpen(false);
     setMoreOpen(true);
   };
@@ -84,45 +95,65 @@ function Navbar() {
     };
   }, [moreOpen]);
 
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    const closeOnOutsideClick = (event) => {
+      if (!headerRef.current?.contains(event.target)) setMenuOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    window.addEventListener("pointerdown", closeOnOutsideClick);
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape);
+      window.removeEventListener("pointerdown", closeOnOutsideClick);
+    };
+  }, [menuOpen]);
+
   return (
-    <header className="site-header">
+    <header ref={headerRef} className="site-header">
       <div className="nav-inner">
         <a className="brand" href="/" onClick={closeMenu} aria-label="Hashnode Lab">
           hashnode<span>/lab</span>
         </a>
         <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={() => setMenuOpen((open) => !open)}>
-          <span className="sr-only">Toggle navigation</span><span /><span /><span />
+          <span className="sr-only">{menuOpen ? "Close navigation" : "Open navigation"}</span><span /><span /><span />
         </button>
         <nav id="primary-navigation" className={`site-nav ${menuOpen ? "is-open" : ""}`} aria-label="Primary navigation">
-          <NavLink className="nav-primary" to="/" onClick={closeMenu}>Explore</NavLink>
-          <NavLink className="nav-primary" to="/writers" onClick={closeMenu}>Writers</NavLink>
-          <NavLink className="nav-primary" to="/pricing" onClick={closeMenu}>{user && !isPro ? "Upgrade" : "Pricing"}</NavLink>
-          <NavLink className="nav-primary" to="/search" onClick={closeMenu}>Search</NavLink>
-          {user && isPro && <span className="pro-badge">PRO</span>}
-          {user && <NavLink className="nav-visible" to="/editor" onClick={closeMenu}>Write</NavLink>}
-          {user && <NavLink className="nav-secondary" to="/dashboard" onClick={closeMenu}>Dashboard</NavLink>}
-          {user && <NavLink className="nav-visible nav-notifications" to="/notifications" onClick={closeMenu}>Notifications{unreadNotifications > 0 && <span className="notification-count" aria-label={`${unreadNotifications} unread`}>{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</NavLink>}
-          {user && <NavLink className="nav-secondary" to="/settings" onClick={closeMenu}>Settings</NavLink>}
-          {user && <NavLink className="nav-secondary" to="/bookmarks" onClick={closeMenu}>Bookmarks</NavLink>}
-          <button ref={moreTriggerRef} className={`nav-more ${moreOpen ? "active" : ""}`} type="button" aria-haspopup="dialog" aria-expanded={moreOpen} aria-controls="more-panel" onClick={openMore}>More <span aria-hidden="true">•••</span></button>
-          {user && isActivationPending && <span className="activation-badge" role="status">Activating PRO…</span>}
-          <button
-            className="theme-toggle"
-            type="button"
-            aria-label={`${themeLabel}. Switch to ${nextPreference} theme`}
-            title={themeLabel}
-            onClick={() => setPreference(nextPreference)}
-          >
-            <span aria-hidden="true">{resolvedTheme === "dark" ? "☾" : "☀"}</span>
-            <span>{preference === "system" ? "System" : resolvedTheme === "dark" ? "Dark" : "Light"}</span>
-          </button>
-          {user ? <button className="nav-logout" type="button" onClick={() => { logout(); closeMenu(); }}>Log out</button> : (
-            <div className="nav-auth-links"><NavLink to="/login" onClick={closeMenu}>Log in</NavLink><NavLink className="button button-small" to="/register" onClick={closeMenu}>Get started</NavLink></div>
-          )}
-          {user && <NavLink className="nav-avatar" to={profilePath} onClick={closeMenu} aria-label={`Your profile, ${user.name || user.username}`} title="Your profile"><ProfileAvatar src={user.avatarUrl} name={user.name} fallbackName={user.username} imageClassName="nav-avatar-image" fallbackClassName="nav-avatar-initial" /></NavLink>}
+          <div className="nav-link-group">
+            <NavLink className="nav-primary" to="/" onClick={closeMenu}>Explore</NavLink>
+            <NavLink className="nav-primary" to="/writers" onClick={closeMenu}>Writers</NavLink>
+            <NavLink className="nav-primary" to="/pricing" onClick={closeMenu}>{user && !isPro ? "Upgrade" : "Pricing"}</NavLink>
+            <NavLink className="nav-primary" to="/search" onClick={closeMenu}>Search</NavLink>
+            {user && isPro && <span className="pro-badge">PRO</span>}
+            {user && <NavLink className="nav-visible" to="/editor" onClick={closeMenu}>Write</NavLink>}
+            {user && <NavLink className="nav-secondary" to="/dashboard" onClick={closeMenu}>Dashboard</NavLink>}
+            {user && <NavLink className="nav-visible nav-notifications" to="/notifications" onClick={closeMenu}>Notifications{unreadNotifications > 0 && <span className="notification-count" aria-label={`${unreadNotifications} unread`}>{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</NavLink>}
+            {user && <NavLink className="nav-secondary" to="/settings" onClick={closeMenu}>Settings</NavLink>}
+            {user && <NavLink className="nav-secondary" to="/bookmarks" onClick={closeMenu}>Bookmarks</NavLink>}
+          </div>
+          <div className="nav-account-group">
+            <button ref={moreTriggerRef} className={`nav-more ${moreOpen ? "active" : ""}`} type="button" aria-haspopup="dialog" aria-expanded={moreOpen} aria-controls="more-panel" onClick={openMore}>More <span aria-hidden="true">•••</span></button>
+            {user && isActivationPending && <span className="activation-badge" role="status">Activating PRO…</span>}
+            <button
+              className="theme-toggle"
+              type="button"
+              aria-label={`${themeLabel}. Switch to ${nextPreference} theme`}
+              title={themeLabel}
+              onClick={() => setPreference(nextPreference)}
+            >
+              <span aria-hidden="true">{resolvedTheme === "dark" ? "☾" : "☀"}</span>
+              <span>{preference === "system" ? "System" : resolvedTheme === "dark" ? "Dark" : "Light"}</span>
+            </button>
+            {user ? <button className="nav-logout" type="button" onClick={() => { logout(); closeMenu(); }}>Log out</button> : (
+              <div className="nav-auth-links"><NavLink to="/login" onClick={closeMenu}>Log in</NavLink><NavLink className="button button-small" to="/register" onClick={closeMenu}>Get started</NavLink></div>
+            )}
+            {user && <NavLink className="nav-avatar" to={profilePath} onClick={closeMenu} aria-label={`Your profile, ${user.name || user.username}`} title="Your profile"><span className="nav-avatar-circle"><ProfileAvatar src={user.avatarUrl} name={user.name} fallbackName={user.username} imageClassName="nav-avatar-image" fallbackClassName="nav-avatar-initial" /></span><span className="nav-avatar-label">Profile</span></NavLink>}
+          </div>
         </nav>
       </div>
-      {moreOpen && createPortal(<div className="more-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeMore(); }}>
+      {moreOpen && createPortal(<div className="more-backdrop" style={{ "--more-top": `${morePosition.top}px`, "--more-right": `${morePosition.right}px` }} onMouseDown={(event) => { if (event.target === event.currentTarget) closeMore(); }}>
         <aside ref={morePanelRef} id="more-panel" className="more-panel" role="dialog" aria-modal="true" aria-labelledby="more-title">
           <header className="more-panel-header">
             <div><p className="eyebrow">HASHNODE/LAB</p><h2 id="more-title">More</h2></div>
